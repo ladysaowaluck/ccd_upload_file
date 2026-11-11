@@ -61,11 +61,15 @@ return [
     |
     */
 
-    // Gemini : Use App\Models\Auth\AdminUser on authdb connection as authentication model
+    // Use App\Models\Auth\AdminUser as default authentication model for existing users in authdb
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', \App\Models\Auth\AdminUser::class),
+        ],
+        'app_users' => [
+            'driver' => 'eloquent',
+            'model' => \App\Models\User::class,
         ],
     ],
 
@@ -88,12 +92,19 @@ return [
     |
     */
 
-    // Gemini : Configure password resets to use existing table 'password_resets' on 'authdb' connection from sn_user_auth_rds.sql
+    // Configure password resets for both existing AdminUser (users) and new User (app_users)
     'passwords' => [
         'users' => [
             'provider' => 'users',
-            'connection' => 'authdb',
-            'table' => 'password_resets',
+            'connection' => env('AUTH_PASSWORD_RESET_CONNECTION', 'mysql'),
+            'table' => env('AUTH_PASSWORD_RESET_TABLE', 'password_resets'),
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+        'app_users' => [
+            'provider' => 'app_users',
+            'connection' => env('AUTH_PASSWORD_RESET_CONNECTION', 'mysql'),
+            'table' => env('AUTH_PASSWORD_RESET_TABLE', 'password_resets'),
             'expire' => 60,
             'throttle' => 60,
         ],

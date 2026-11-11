@@ -1,4 +1,3 @@
-{{-- Gemini : GAP-09 — Master Statistical Codes Registry View --}}
 @extends('layouts.app')
 
 @section('header_title', 'Master Statistical Codes Registry')

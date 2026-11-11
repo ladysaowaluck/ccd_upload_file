@@ -12,7 +12,6 @@ class ExampleTest extends TestCase
      */
     public function test_the_application_returns_a_successful_response(): void
     {
-        // Gemini : Root route redirects to /clearance repository
         $response = $this->get('/');
 
         $response->assertRedirect('/clearance');

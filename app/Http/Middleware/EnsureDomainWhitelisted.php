@@ -2,16 +2,13 @@
 
 namespace App\Http\Middleware;
 
-// Gemini : EnsureDomainWhitelisted restricts registration strictly to @th.nissin-asia.com
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureDomainWhitelisted
 {
-    /**
-     * Handle an incoming request.
-     */
+    // Handle an incoming request.
     public function handle(Request $request, Closure $next): Response
     {
         $email = $request->input('email');

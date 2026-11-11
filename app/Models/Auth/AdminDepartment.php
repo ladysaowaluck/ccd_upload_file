@@ -2,7 +2,6 @@
 
 namespace App\Models\Auth;
 
-// Gemini : AdminDepartment model bound to authdb connection
 use Illuminate\Database\Eloquent\Model;
 
 class AdminDepartment extends Model

@@ -48,14 +48,12 @@
                     <svg class="w-4 h-4 mr-3 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                     Customs Clearances
                 </a>
-                {{-- Lady : Sidebar was missing the Excel Requisition Ingestion navigation link. --}}
                 {{--
                 <a href="{{ route('clearance.create') }}" class="flex items-center px-3 py-2.5 rounded-lg {{ request()->routeIs('clearance.create') ? 'bg-brand-700 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-300' }} transition">
                     <svg class="w-4 h-4 mr-3 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Register New CCD
                 </a>
                 --}}
-                {{-- Gemini : GAP-03 — Add Excel Requisition Ingestion link in sidebar navigation --}}
                 <a href="{{ route('clearance.create') }}" class="flex items-center px-3 py-2.5 rounded-lg {{ request()->routeIs('clearance.create') ? 'bg-brand-700 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-300' }} transition">
                     <svg class="w-4 h-4 mr-3 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Register New CCD
@@ -64,14 +62,12 @@
                     <svg class="w-4 h-4 mr-3 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                     Excel Ingestion
                 </a>
-                {{-- Lady : Sidebar was missing the Weekly HS Exports navigation link. --}}
                 {{--
                 <a href="{{ route('compliance.outstanding') }}" class="flex items-center px-3 py-2.5 rounded-lg {{ request()->routeIs('compliance.outstanding') ? 'bg-rose-700 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-300' }} transition">
                     <svg class="w-4 h-4 mr-3 opacity-80 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                     Outstanding Auditing
                 </a>
                 --}}
-                {{-- Gemini : GAP-04 — Add Weekly HS Exports navigation link to sidebar --}}
                 <a href="{{ route('compliance.outstanding') }}" class="flex items-center px-3 py-2.5 rounded-lg {{ request()->routeIs('compliance.outstanding') ? 'bg-rose-700 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-300' }} transition">
                     <svg class="w-4 h-4 mr-3 opacity-80 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                     Outstanding Auditing
@@ -81,7 +77,6 @@
                     Weekly HS Exports
                 </a>
 
-                {{-- Lady : Master data links were shown to all authenticated users regardless of their role, leading to 403 errors when non-admins clicked them. --}}
                 {{--
                 <div class="pt-5 pb-1 text-xs uppercase tracking-wider text-slate-500 font-bold px-3">
                     Master Data
@@ -91,7 +86,6 @@
                     Customer Registry
                 </a>
                 --}}
-                {{-- Gemini : GAP-02 — Only display administrative menus to users with administrator role --}}
                 @if(auth()->user() && auth()->user()->isAdmin())
                 <div class="pt-5 pb-1 text-xs uppercase tracking-wider text-slate-500 font-bold px-3">
                     Master Data
@@ -100,13 +94,13 @@
                     <svg class="w-4 h-4 mr-3 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                     Customer Registry
                 </a>
-                {{-- Gemini : GAP-08 — User Management link, admin-only, links to admin.users.index --}}
+                {{--User Management link, admin-only, links to admin.users.index --}}
                 <a href="{{ route('admin.users.index') }}" class="flex items-center px-3 py-2.5 rounded-lg {{ request()->routeIs('admin.users.*') ? 'bg-brand-700 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-300' }} transition">
                     <svg class="w-4 h-4 mr-3 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     User Management
                 </a>
 
-                {{-- Gemini : GAP-09 — Master data navigation links (admin-only section) --}}
+                {{--  Master data navigation links (admin-only section) --}}
                 <div class="pt-3 pb-1 text-xs uppercase tracking-wider text-slate-500 font-bold px-3">
                     Reference Data
                 </div>
@@ -128,11 +122,11 @@
                 </a>
                 @endif
             </nav>
-
+<!-- 
             <div class="p-4 border-t border-slate-800 bg-slate-950 text-xs text-slate-400">
                 <div>Dual RDS Connected</div>
                 <div class="text-[11px] text-emerald-400 font-mono mt-0.5">● mysql + authdb OK</div>
-            </div>
+            </div> -->
         </aside>
 
         <!-- Main Content Area -->
@@ -168,8 +162,8 @@
                     </div>
                 @endif
 
-                {{-- Gemini : Upload Destination & Address Debug Inspector Card --}}
-                @if (session('upload_debug') && count(session('upload_debug')) > 0)
+                {{-- Upload Destination & Address Debug Inspector Card --}}
+                <!-- @if (session('upload_debug') && count(session('upload_debug')) > 0)
                     <div class="mb-6 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 p-4 shadow-sm" x-data="{ expanded: true }">
                         <div class="flex items-center justify-between pb-2 border-b border-slate-800">
                             <div class="flex items-center space-x-2">
@@ -187,11 +181,11 @@
                                         <span class="font-bold text-white text-[13px]">{{ $dbg['file_name'] }}</span>
                                         <span class="text-[11px] text-slate-400">{{ number_format(($dbg['size_bytes'] ?? 0) / 1024, 1) }} KB</span>
                                     </div>
+                                    {{-- Safely inspect AWS Server EFS /mnt/efs path with fallback --}}
                                     <div class="text-slate-400 flex flex-col sm:flex-row sm:items-start gap-1">
-                                        <span class="text-slate-500 w-28 flex-shrink-0">Local Storage:</span>
-                                        <span class="text-slate-200 break-all select-all">{{ $dbg['local_path'] }}</span>
+                                        <span class="text-slate-500 w-28 flex-shrink-0">AWS Server EFS:</span>
+                                        <span class="text-slate-200 break-all select-all">{{ $dbg['local_server'] ?? ($dbg['local_path'] ?? 'Bypassed') }}</span>
                                     </div>
-                                    {{-- Lady : Unconditionally rendering local URL links leads to broken empty anchor tags when local disk storage is eliminated. --}}
                                     @if(!empty($dbg['local_url']))
                                     <div class="text-slate-400 flex flex-col sm:flex-row sm:items-start gap-1">
                                         <span class="text-slate-500 w-28 flex-shrink-0">Local URL:</span>
@@ -200,9 +194,9 @@
                                     @endif
                                     <div class="text-slate-400 flex flex-col sm:flex-row sm:items-start gap-1">
                                         <span class="text-slate-500 w-28 flex-shrink-0">AWS S3:</span>
-                                        @if($dbg['s3_synced'])
+                                        @if(!empty($dbg['s3_synced']))
                                             <span class="text-emerald-400 font-bold">✓ Synced</span>
-                                            <span class="text-slate-300 break-all select-all">{{ $dbg['s3_location'] }}</span>
+                                            <span class="text-slate-300 break-all select-all">{{ $dbg['s3_location'] ?? '' }}</span>
                                         @else
                                             <span class="text-amber-400">Not synced to S3</span>
                                         @endif
@@ -217,7 +211,7 @@
                             @endforeach
                         </div>
                     </div>
-                @endif
+                @endif -->
 
                 @if ($errors->any())
                     <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm shadow-sm">

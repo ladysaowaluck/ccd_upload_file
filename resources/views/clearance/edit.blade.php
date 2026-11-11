@@ -121,7 +121,6 @@
             <h3 class="text-sm font-bold text-slate-800">Tariff Rates & Customs Quantities</h3>
         </div>
 
-        {{-- Lady : Unconstrained input fields in edit form allow typing more than varchar(3) characters, leading to database truncation exceptions. --}}
         {{--
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
@@ -142,7 +141,6 @@
             </div>
         </div>
         --}}
-        {{-- Gemini : Add strict maxlength='3' and uppercase styling to match database column limits --}}
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Statistical Code</label>

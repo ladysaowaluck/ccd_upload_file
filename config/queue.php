@@ -13,7 +13,7 @@ return [
     |
     */
 
-    // Gemini : Default queue connection fallback to 'sync' to strictly avoid creating or requiring non-existent 'jobs' table
+    // Default queue connection fallback to 'sync' to strictly avoid creating or requiring non-existent 'jobs' table
     'default' => env('QUEUE_CONNECTION', 'sync'),
 
     /*

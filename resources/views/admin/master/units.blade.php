@@ -1,4 +1,3 @@
-{{-- Gemini : GAP-09 — Master Quantity Units Registry View --}}
 @extends('layouts.app')
 
 @section('header_title', 'Master Quantity Units Registry')

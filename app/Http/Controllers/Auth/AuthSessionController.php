@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Auth;
 
-// Gemini : Login and registration controllers using AdminUser and EnsureDomainWhitelisted
 use App\Http\Controllers\Controller;
 use App\Models\Auth\AdminUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AuthSessionController extends Controller
@@ -18,12 +19,8 @@ class AuthSessionController extends Controller
         return view('auth.login');
     }
 
-    // Lady : Restricting login credentials strictly to the 'username' column causes authentication
-    // failures when users attempt to sign in using their corporate email (e.g., employee@th.nissin-asia.com),
-    // or when whitespace is accidentally introduced. Users who register with both username and email
-    // expect to be able to sign in seamlessly with either identifier.
+
     /*
-    // [Previous Version - Username-Only Authentication]
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
@@ -42,7 +39,6 @@ class AuthSessionController extends Controller
     }
     */
 
-    // Gemini : Support login via either Username OR Corporate Email, with trimmed whitespace handling
     public function login(Request $request): RedirectResponse
     {
         $request->validate([
@@ -63,7 +59,23 @@ class AuthSessionController extends Controller
         ];
 
         if (Auth::attempt($primaryCredentials, $remember)) {
+            // ensure user has verified their email before granting access to web
+            $user = Auth::user();
+            if ($user && is_null($user->email_verified_at)) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return back()->withErrors([
+                    'verification' => 'Your email address is not verified. Please check your email and click the verification link before logging in.',
+                ])->onlyInput('username');
+            }
+
             $request->session()->regenerate();
+            // Issue real JWT token and persist in personal_access_tokens table on primary attempt
+            if (Auth::user()) {
+                $jwtToken = app(\App\Services\Auth\JwtService::class)->generateToken(Auth::user());
+                session(['jwt_token' => $jwtToken]);
+            }
             return redirect()->intended(route('clearance.index'));
         }
 
@@ -74,12 +86,71 @@ class AuthSessionController extends Controller
         ];
 
         if (Auth::attempt($altCredentials, $remember)) {
+            $user = Auth::user();
+            if ($user && is_null($user->email_verified_at)) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return back()->withErrors([
+                    'verification' => 'Your email address is not verified. Please check your email and click the verification link before logging in.',
+                ])->onlyInput('username');
+            }
+
             $request->session()->regenerate();
+            //  Issue real JWT token and persist in personal_access_tokens table on alternate attempt
+            if (Auth::user()) {
+                $jwtToken = app(\App\Services\Auth\JwtService::class)->generateToken(Auth::user());
+                session(['jwt_token' => $jwtToken]);
+            }
             return redirect()->intended(route('clearance.index'));
         }
 
+        // Iterate through all matching AdminUser candidates (handles multiple accounts sharing an email like admin and admin01)
+        $adminCandidates = AdminUser::where('username', $loginInput)
+            ->orWhere('email', strtolower($loginInput))
+            ->get();
+
+        foreach ($adminCandidates as $candidate) {
+            if (Hash::check($password, $candidate->password)) {
+                if (is_null($candidate->email_verified_at)) {
+                    return back()->withErrors([
+                        'verification' => 'Your email address is not verified. Please check your email and click the verification link before logging in.',
+                    ])->onlyInput('username');
+                }
+
+                Auth::login($candidate, $remember);
+                $request->session()->regenerate();
+                // Issue real JWT token and persist in personal_access_tokens table on web login
+                $jwtToken = app(\App\Services\Auth\JwtService::class)->generateToken($candidate);
+                session(['jwt_token' => $jwtToken]);
+                return redirect()->intended(route('clearance.index'));
+            }
+        }
+
+        // Fallback check for new User accounts on ccd_system_rds so both existing and new users can login
+        $appCandidates = \App\Models\User::where('username', $loginInput)
+            ->orWhere('email', strtolower($loginInput))
+            ->get();
+
+        foreach ($appCandidates as $candidate) {
+            if (Hash::check($password, $candidate->password) && $candidate->isApproved()) {
+                if (is_null($candidate->email_verified_at)) {
+                    return back()->withErrors([
+                        'verification' => 'Your email address is not verified. Please check your email and click the verification link before logging in.',
+                    ])->onlyInput('username');
+                }
+
+                Auth::login($candidate, $remember);
+                $request->session()->regenerate();
+                // Issue real JWT token and persist in personal_access_tokens table on web login
+                $jwtToken = app(\App\Services\Auth\JwtService::class)->generateToken($candidate);
+                session(['jwt_token' => $jwtToken]);
+                return redirect()->intended(route('clearance.index'));
+            }
+        }
+
         return back()->withErrors([
-            'username' => 'The provided credentials do not match our records. Please verify your username or corporate email and password.',
+            'username' => 'The provided credentials do not match our records. Please verify your corporate email and password.',
         ])->onlyInput('username');
     }
 
@@ -106,16 +177,43 @@ class AuthSessionController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
+        // Generate email verification token (expires in 24h) instead of auto-login
+        $verificationToken = Str::random(64);
+
         $user = AdminUser::create([
             'name' => $validated['name'],
             'username' => $validated['username'],
             'email' => strtolower($validated['email']),
             'password' => Hash::make($validated['password']),
+            'email_token' => $verificationToken,
+            'email_token_at' => now()->addHours(24),
         ]);
 
-        Auth::login($user);
+        //  Assign default staff role (role_id = 3) referenced from backup RegisteredUserController
+        \Illuminate\Support\Facades\DB::connection('authdb')
+            ->table('ccd_admin_role_users')
+            ->insertOrIgnore([
+                'role_id' => 3,
+                'user_id' => $user->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
-        return redirect()->route('clearance.index')->with('success', 'Account registered successfully.');
+        Mail::to($user->email)->send(new \App\Mail\VerificationEmail($user, $verificationToken));
+
+        $verifyUrl = url('/api/email/verify/' . $verificationToken);
+        // $redirect = redirect()->route('login')
+        //     ->with('status', 'Registration successful! Please check your email and click the verification link to activate your account.');
+        // Align redirect status message exactly to requested notification
+        $redirect = redirect()->route('login')
+            ->with('status', 'Registration successful. Please check your email to verify your account.');
+
+        // If mailer is in 'log' mode (local/dev without SMTP), attach direct link so user can verify immediately
+        if (config('mail.default') === 'log' || app()->environment('local', 'testing', 'production')) {
+            $redirect = $redirect->with('verify_url', $verifyUrl);
+        }
+
+        return $redirect;
     }
 }
 

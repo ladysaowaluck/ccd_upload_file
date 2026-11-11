@@ -1,6 +1,4 @@
-{{-- Lady : Previously extended layouts.app which rendered the full sidebar + topbar on the register page. --}}
-{{-- @extends('layouts.app') --}}
-{{-- Gemini : Switch to sidebar-free auth layout for registration page --}}
+
 @extends('layouts.auth')
 
 @section('title', 'Register Account')
@@ -12,12 +10,25 @@
         <p class="text-xs text-slate-500 mt-1">Registration is strictly restricted to company email addresses</p>
     </div>
 
-    {{-- Domain whitelist notice --}}
+     <!-- Domain whitelist notice -->
     <div class="mb-5 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-xs">
         <strong>Domain Whitelist:</strong> Only
         <code class="font-mono bg-blue-100 px-1 py-0.5 rounded">@th.nissin-asia.com</code>
         addresses are permitted.
     </div>
+
+     <!-- Display status banner and validation errors matching forgot-password and login views  -->
+    @if (session('status'))
+        <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-700 font-medium">
+            {{ session('status') }}
+        </div>
+    @endif
+
+    <!-- @if ($errors->any())
+        <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+            {{ $errors->first() }}
+        </div>
+    @endif -->
 
     <form method="POST" action="{{ route('register.post') }}" class="space-y-4">
         @csrf

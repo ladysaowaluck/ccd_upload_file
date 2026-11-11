@@ -2,7 +2,6 @@
 
 namespace App\Models\Business;
 
-// Gemini : MasterStatistic matching actual statistics column
 use Illuminate\Database\Eloquent\Model;
 
 class MasterStatistic extends Model

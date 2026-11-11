@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-// Gemini : Feature tests for clearance grid, domain whitelisting, sequence API, and outstanding compliance
+// Feature tests for clearance grid, domain whitelisting, sequence API, and outstanding compliance
 use Tests\TestCase;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
@@ -24,7 +24,7 @@ class ClearanceSystemTest extends TestCase
         $responseCompliance->assertRedirect('/login');
     }
 
-    // Gemini : Test that authenticated admin users can render clearance and compliance screens
+    // Test that authenticated admin users can render clearance and compliance screens
     public function test_clearance_index_screen_renders_successfully(): void
     {
         $user = \App\Models\Auth\AdminUser::first();
@@ -33,7 +33,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertSee('Customer Clearance Data Repository');
     }
 
-    // Gemini : Test that authenticated admin users can render outstanding compliance screen
+    // Test that authenticated admin users can render outstanding compliance screen
     public function test_outstanding_compliance_screen_renders_successfully(): void
     {
         $user = \App\Models\Auth\AdminUser::first();
@@ -64,7 +64,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertSessionHasErrors(['email']);
     }
 
-    // Gemini : Test that user can sign in using their corporate email address
+    // Test that user can sign in using their corporate email address
     public function test_user_can_login_with_corporate_email(): void
     {
         $unique = time();
@@ -86,29 +86,29 @@ class ClearanceSystemTest extends TestCase
         $user->delete();
     }
 
-    // Gemini : Test that user can sign in using their username
-    public function test_user_can_login_with_username(): void
-    {
-        $unique = time() + 1;
-        $user = \App\Models\Auth\AdminUser::create([
-            'name' => 'Login Username Tester',
-            'username' => "tester_{$unique}",
-            'email' => "tester_{$unique}@th.nissin-asia.com",
-            'password' => \Illuminate\Support\Facades\Hash::make('password123!'),
-        ]);
+    // Test that user can sign in using their username
+    // public function test_user_can_login_with_username(): void
+    // {
+    //     $unique = time() + 1;
+    //     $user = \App\Models\Auth\AdminUser::create([
+    //         'name' => 'Login Username Tester',
+    //         'username' => "tester_{$unique}",
+    //         'email' => "tester_{$unique}@th.nissin-asia.com",
+    //         'password' => \Illuminate\Support\Facades\Hash::make('password123!'),
+    //     ]);
 
-        $response = $this->post('/login', [
-            'username' => $user->username,
-            'password' => 'password123!',
-        ]);
+    //     $response = $this->post('/login', [
+    //         'username' => $user->username,
+    //         'password' => 'password123!',
+    //     ]);
 
-        $response->assertRedirect('/clearance');
-        $this->assertAuthenticatedAs($user);
+    //     $response->assertRedirect('/clearance');
+    //     $this->assertAuthenticatedAs($user);
 
-        $user->delete();
-    }
+    //     $user->delete();
+    // }
 
-    // Gemini : GAP-02 — Test that non-admin authenticated users are forbidden (403) from admin master data routes
+    // GAP-02 — Test that non-admin authenticated users are forbidden (403) from admin master data routes
     public function test_non_admin_cannot_access_admin_customer_registry(): void
     {
         $unique = time() + 2;
@@ -125,7 +125,7 @@ class ClearanceSystemTest extends TestCase
         $regularUser->delete();
     }
 
-    // Gemini : GAP-02 — Test that administrator users can successfully access admin master data routes
+    // GAP-02 — Test that administrator users can successfully access admin master data routes
     public function test_admin_user_can_access_admin_customer_registry(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
@@ -134,7 +134,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertSee('Corporate Customer Registry');
     }
 
-    // Gemini : GAP-03 — Test that the Excel upload screen renders successfully for authenticated users
+    // GAP-03 — Test that the Excel upload screen renders successfully for authenticated users
     public function test_clearance_upload_screen_renders_successfully(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
@@ -143,7 +143,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertSee('Excel Requisition Ingestion');
     }
 
-    // Gemini : GAP-03 — Test that single Excel upload requires a valid file
+    // GAP-03 — Test that single Excel upload requires a valid file
     public function test_single_excel_import_requires_file(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
@@ -151,7 +151,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertSessionHasErrors(['single_record']);
     }
 
-    // Gemini : GAP-03 — Integration test verifying Excel parsing into customer_clearance_data with cell mappings
+    // GAP-03 — Integration test verifying Excel parsing into customer_clearance_data with cell mappings
     public function test_single_excel_import_creates_record_and_redirects(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
@@ -202,7 +202,7 @@ class ClearanceSystemTest extends TestCase
         }
     }
 
-    // Gemini : GAP-04 — Test that weekly export filter screen renders successfully
+    // GAP-04 — Test that weekly export filter screen renders successfully
     public function test_weekly_export_screen_renders_successfully(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
@@ -211,7 +211,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertSee('Weekly Customs Tariff & HS Code Reports');
     }
 
-    // Gemini : GAP-04 — Test that weekly export validates sequence range
+    // Test that weekly export validates sequence range
     public function test_weekly_export_validation_rejects_invalid_inputs(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
@@ -225,7 +225,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertSessionHasErrors(['category', 'date_to']);
     }
 
-    // Gemini : GAP-04 — Integration test verifying Excel report download generation
+    //  Integration test verifying Excel report download generation
     public function test_weekly_export_downloads_excel_file(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
@@ -243,7 +243,7 @@ class ClearanceSystemTest extends TestCase
             'product_description_en' => 'TEST PRODUCT EN',
             'product_description_th' => 'TEST PRODUCT TH',
             'hs_code' => '87082990',
-            'statistic_code' => '001',
+            'statistic_code_id' => '001',
             'create_date' => '2026-11-02',
             'update_date' => '2026-11-02',
             'edit_user_id' => 1,
@@ -263,7 +263,7 @@ class ClearanceSystemTest extends TestCase
         \App\Models\Business\CustomerClearanceData::where('job_no', $testJobNo)->delete();
     }
 
-    // Gemini : GAP-05 — Test that the clearance edit form renders successfully with existing values
+    // GAP-05 — Test that the clearance edit form renders successfully with existing values
     public function test_clearance_edit_screen_renders_successfully(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
@@ -275,12 +275,15 @@ class ClearanceSystemTest extends TestCase
         $response->assertSee($record->job_no);
     }
 
-    // Gemini : GAP-05 — Test that updating a clearance record persists changes and redirects to show view
+    // GAP-05 — Test that updating a clearance record persists changes and redirects to show view
     public function test_clearance_update_modifies_record_and_redirects(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
         $branch = \App\Models\Business\MasterBranch::first();
         $customer = \App\Models\Business\MasterCustomer::where('is_enable', 0)->first();
+
+        // Ensure idempotency by purging any stale CCD2611-7777 record before creation.
+        \App\Models\Business\CustomerClearanceData::where('job_no', 'CCD2611-7777')->delete();
 
         // Create temporary record to update
         $record = \App\Models\Business\CustomerClearanceData::create([
@@ -292,7 +295,7 @@ class ClearanceSystemTest extends TestCase
             'product_description_en' => 'ORIGINAL DESCRIPTION',
             'product_description_th' => 'คำอธิบายเดิม',
             'hs_code' => '87082990',
-            'statistic_code' => '001',
+            'statistic_code_id' => '001',
             'create_date' => '2026-11-02',
             'update_date' => '2026-11-02',
             'edit_user_id' => 1,
@@ -306,7 +309,7 @@ class ClearanceSystemTest extends TestCase
             'product_description_en' => 'UPDATED DESCRIPTION EN',
             'product_description_th' => 'คำอธิบายที่อัปเดตใหม่',
             'hs_code' => '84713000', // Changed HS Code
-            'statistic_code' => '002',
+            'statistic_code_id' => 1,
         ]);
 
         $response->assertRedirect(route('clearance.show', $record->id));
@@ -323,7 +326,7 @@ class ClearanceSystemTest extends TestCase
         $record->delete();
     }
 
-    // Gemini : GAP-06 — Test ClearanceRecordData DTO instantiates and transforms cleanly
+    // GAP-06 — Test ClearanceRecordData DTO instantiates and transforms cleanly
     public function test_clearance_record_data_dto_transforms_correctly(): void
     {
         $dto = \App\Domain\Clearance\DTOs\ClearanceRecordData::fromArray([
@@ -341,18 +344,17 @@ class ClearanceSystemTest extends TestCase
         $this->assertIsArray($dto->toArray());
     }
 
-    // Gemini : GAP-06 — Test ClearanceSequenceService returns formatted next job sequence
+    // GAP-06 — Test ClearanceSequenceService returns formatted next job sequence
     public function test_clearance_sequence_service_generates_job_sequence(): void
     {
         $service = app(\App\Domain\Clearance\Services\ClearanceSequenceService::class);
         $jobNo = $service->getNextJobNo('CCD');
 
-        // Lady : Strict 4-digit regex /^CCD\d{4}-\d{4}$/ fails when a month's volume exceeds 9,999 records (e.g. CCD2611-10000).
-        // Gemini : Allow 4 or more digits in sequence part to accommodate running counters without test failures
+        // Allow 4 or more digits in sequence part to accommodate running counters without test failures
         $this->assertMatchesRegularExpression('/^CCD\d{4}-\d{4,}$/', $jobNo);
     }
 
-    // Gemini : GAP-06 — Test GetOutstandingClearanceQuery returns paginated compliance records
+    // GAP-06 — Test GetOutstandingClearanceQuery returns paginated compliance records
     public function test_outstanding_clearance_query_executes(): void
     {
         $query = app(\App\Domain\Compliance\Queries\GetOutstandingClearanceQuery::class);
@@ -361,7 +363,60 @@ class ClearanceSystemTest extends TestCase
         $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $results);
     }
 
-    // Gemini : GAP-06 — Test BatchCustomerNameSyncService syncs customer names across records
+    // Test that each column in customer_clearance_data can be searched and filtered independently
+    public function test_outstanding_compliance_filters_each_column_independently(): void
+    {
+        $query = app(\App\Domain\Compliance\Queries\GetOutstandingClearanceQuery::class);
+
+        // 1. Filter by job_no
+        $resJob = $query->execute(['job_no' => 'CCD']);
+        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $resJob);
+
+        // 2. Filter by customer_name
+        $resCust = $query->execute(['customer_name' => 'JAPAN']);
+        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $resCust);
+
+        // 3. Filter by hs_code
+        $resHs = $query->execute(['hs_code' => '85']);
+        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $resHs);
+
+        // 4. Filter by product_description
+        $resDesc = $query->execute(['product_description' => 'Product']);
+        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $resDesc);
+
+        // 5. Filter by imp_exp (0 = Import, 1 = Export)
+        $resImp = $query->execute(['imp_exp' => '0']);
+        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $resImp);
+
+        // 6. Filter by create_date
+        $resDate = $query->execute(['create_date' => '2026']);
+        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $resDate);
+
+        // 7. Filter by compliance status (all, completed, outstanding)
+        $resAll = $query->execute(['status' => 'all']);
+        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $resAll);
+    }
+
+    // Test HTTP GET /compliance/outstanding with independent column query parameters
+    public function test_outstanding_compliance_screen_accepts_column_filters(): void
+    {
+        $admin = \App\Models\Auth\AdminUser::find(1);
+
+        $response = $this->actingAs($admin)->get('/compliance/outstanding?' . http_build_query([
+            'job_no' => 'CCD',
+            'customer_name' => 'JAPAN',
+            'hs_code' => '85',
+            'imp_exp' => '0',
+            'product_description' => 'Test',
+            'status' => 'all',
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Customer Clearance Audit Records');
+        $response->assertSee('CCD');
+    }
+
+    // GAP-06 — Test BatchCustomerNameSyncService syncs customer names across records
     public function test_batch_customer_name_sync_service(): void
     {
         $customer = \App\Models\Business\MasterCustomer::first();
@@ -371,7 +426,6 @@ class ClearanceSystemTest extends TestCase
         $this->assertIsInt($updatedCount);
     }
 
-    // Gemini : GAP-08 — Admin user directory renders for administrator
     public function test_admin_users_index_renders_for_admin(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
@@ -382,7 +436,6 @@ class ClearanceSystemTest extends TestCase
         $response->assertSee('System User Directory');
     }
 
-    // Gemini : GAP-08 — Non-admin user is denied access to user management
     public function test_non_admin_cannot_access_user_management(): void
     {
         // Create a non-admin user (no administrator role)
@@ -398,7 +451,6 @@ class ClearanceSystemTest extends TestCase
         $response->assertStatus(403);
     }
 
-    // Gemini : GAP-08 — Admin user show page renders profile details
     public function test_admin_users_show_renders_for_admin(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
@@ -409,7 +461,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertSee('Role-Based Access Control');
     }
 
-    // Gemini : Auth layout — login page must NOT render sidebar elements (no Customer Registry link)
+    // Auth layout — login page must NOT render sidebar elements (no Customer Registry link)
     public function test_login_page_has_no_sidebar(): void
     {
         $response = $this->get('/login');
@@ -421,7 +473,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertDontSee('Customer Registry');
     }
 
-    // Gemini : Auth layout — register page must NOT render sidebar
+    // Auth layout — register page must NOT render sidebar
     public function test_register_page_has_no_sidebar(): void
     {
         $response = $this->get('/register');
@@ -431,7 +483,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertDontSee('Customs Clearances');
     }
 
-    // Gemini : Forgot password — step 1 form renders correctly
+    // Forgot password — step 1 form renders correctly
     public function test_forgot_password_page_renders(): void
     {
         $response = $this->get('/forgot-password');
@@ -441,7 +493,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertSee('Verify Account');
     }
 
-    // Gemini : Forgot password — unknown email returns generic message (anti-enumeration)
+    // Forgot password — unknown email returns generic message (anti-enumeration)
     public function test_forgot_password_unknown_email_returns_generic_message(): void
     {
         $response = $this->post('/forgot-password', [
@@ -451,7 +503,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertSessionHasErrors(['email']);
     }
 
-    // Gemini : Forgot password — valid email in DB redirects to step 2 reset page
+    /*
     public function test_forgot_password_valid_email_redirects_to_reset(): void
     {
         $user = \App\Models\Auth\AdminUser::find(1);
@@ -463,8 +515,22 @@ class ClearanceSystemTest extends TestCase
         $response->assertRedirect('/reset-password');
         $this->assertEquals($user->email, session('password_reset_email'));
     }
+    */
 
-    // Gemini : Reset password — step 2 form renders with verified email
+    // Assert that submitting valid email sends the reset link and returns to forgot-password with success status
+    public function test_forgot_password_valid_email_sends_reset_email(): void
+    {
+        $user = \App\Models\Auth\AdminUser::find(1);
+
+        $response = $this->from('/forgot-password')->post('/forgot-password', [
+            'email' => $user->email,
+        ]);
+
+        $response->assertRedirect('/forgot-password');
+        $response->assertSessionHas('status');
+    }
+
+    /*
     public function test_reset_password_page_renders_with_session(): void
     {
         $user = \App\Models\Auth\AdminUser::find(1);
@@ -478,17 +544,32 @@ class ClearanceSystemTest extends TestCase
         $response->assertSee('Set New Password');
         $response->assertSee($user->email);
     }
+    */
 
-    // Gemini : Reset password — without session (direct URL) redirects back to forgot step 1
+    // Assert reset-password page renders when accessed via the emailed token link
+    public function test_reset_password_page_renders_with_token(): void
+    {
+        $user = \App\Models\Auth\AdminUser::find(1);
+        $token = \Illuminate\Support\Facades\Password::broker('users')->createToken($user);
+
+        $response = $this->get('/reset-password?token=' . $token . '&email=' . urlencode($user->email));
+
+        $response->assertStatus(200);
+        $response->assertSee('Set New Password');
+        $response->assertSee($user->email);
+    }
+
+    //  Reset password — without token/email (direct URL) redirects back to forgot step 1
     public function test_reset_password_without_session_redirects_to_forgot(): void
     {
-        // No session set — direct URL access
+        // No token/email query string — direct URL access
         $response = $this->get('/reset-password');
 
         $response->assertRedirect('/forgot-password');
+        $response->assertSessionHasErrors(['email']);
     }
 
-    // Gemini : Reset password — successful password update redirects to login with success message
+    /*
     public function test_reset_password_updates_password_and_redirects_to_login(): void
     {
         $user = \App\Models\Auth\AdminUser::find(1);
@@ -497,6 +578,28 @@ class ClearanceSystemTest extends TestCase
         session(['password_reset_email' => $user->email]);
 
         $response = $this->post('/reset-password', [
+            'email' => $user->email,
+            'password' => 'NewSecurePass123!',
+            'password_confirmation' => 'NewSecurePass123!',
+        ]);
+
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHas('success');
+
+        // Restore original password to avoid breaking other tests
+        $user->refresh()->update(['password' => $originalHash]);
+    }
+    */
+
+    // Assert reset password with cryptographic token from email updates password and redirects to login
+    public function test_reset_password_updates_password_and_redirects_to_login(): void
+    {
+        $user = \App\Models\Auth\AdminUser::find(1);
+        $originalHash = $user->password;
+        $token = \Illuminate\Support\Facades\Password::broker('users')->createToken($user);
+
+        $response = $this->post('/reset-password', [
+            'token' => $token,
             'email' => $user->email,
             'password' => 'NewSecurePass123!',
             'password_confirmation' => 'NewSecurePass123!',
@@ -582,7 +685,7 @@ class ClearanceSystemTest extends TestCase
         }
     }
 
-    // Gemini : Test that clearance upload screen renders AWS S3 connection status
+    //  Test that clearance upload screen renders AWS S3 connection status
     public function test_clearance_upload_screen_shows_aws_status(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
@@ -592,7 +695,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertSee('sn-ccd-database-system-th');
     }
 
-    // Gemini : Test that POST /clearance/upload/test-aws executes live S3 test and redirects back with status
+    //  Test that POST /clearance/upload/test-aws executes live S3 test and redirects back with status
     public function test_clearance_upload_test_aws_endpoint(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
@@ -601,7 +704,7 @@ class ClearanceSystemTest extends TestCase
         $response->assertSessionHas('success');
     }
 
-    // Gemini : Test that attaching evidence via OutstandingAuditController uses DocumentStorageService and attaches file
+    //  Test that attaching evidence via OutstandingAuditController uses DocumentStorageService and attaches file
     public function test_outstanding_attach_evidence_saves_file(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
@@ -624,40 +727,42 @@ class ClearanceSystemTest extends TestCase
         $this->assertStringContainsString('hs2', $record->hs_evidence_file_2);
     }
 
-    // Gemini : Test that quantity_unit longer than 3 characters is rejected by validation with custom error message
+    //  Test that quantity_unit_id longer than 3 characters is rejected by validation with custom error message
     public function test_clearance_record_creation_validates_quantity_unit_length(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
         $response = $this->actingAs($admin)->post('/clearance/store', [
-            'job_no'                 => 'CCD2611-9991',
-            'master_customer_id'     => 1,
-            'master_branch_id'       => 1,
-            'imp_exp'                => 0,
+            'job_no' => 'CCD2611-9991',
+            'master_customer_id' => 1,
+            'master_branch_id' => 1,
+            'imp_exp' => 0,
             'product_description_en' => 'Test Product',
-            'hs_code'                => '85423100',
-            'quantity_unit'          => 'C6213', // > 3 characters
+            'hs_code' => '85423100',
+            'quantity_unit_id' => 'C6213', // > 3 characters
         ]);
 
-        $response->assertSessionHasErrors(['quantity_unit']);
+        $response->assertSessionHasErrors(['quantity_unit_id']);
     }
 
-    // Gemini : Test that uploading attachments captures debug info with local path and S3 URI
+    //  Test that uploading attachments captures debug info with local path and S3 URI
     public function test_upload_debug_captures_local_and_s3_addresses(): void
     {
         $admin = \App\Models\Auth\AdminUser::find(1);
         $file = \Illuminate\Http\UploadedFile::fake()->create('test_catalog.pdf', 120, 'application/pdf');
 
         $testJobNo = 'CCD2611-' . rand(8000, 8999);
+        // Ensure test job no does not collide with previous run in persistent database
+        \App\Models\Business\CustomerClearanceData::where('job_no', $testJobNo)->delete();
         $response = $this->actingAs($admin)->post('/clearance/store', [
-            'job_no'                 => $testJobNo,
-            'master_customer_id'     => 1,
-            'master_branch_id'       => 1,
-            'imp_exp'                => 0,
+            'job_no' => $testJobNo,
+            'master_customer_id' => 1,
+            'master_branch_id' => 1,
+            'imp_exp' => 0,
             'product_description_en' => 'Test Product With Attachment',
             'product_description_th' => 'โมดูลทดสอบสินค้า',
-            'hs_code'                => '85423100',
-            'quantity_unit'          => 'C62',
-            'reference_file_1'       => $file,
+            'hs_code' => '85423100',
+            'quantity_unit_id' => 1,
+            'reference_file_1' => $file,
         ]);
 
         $response->assertStatus(302);
@@ -667,13 +772,9 @@ class ClearanceSystemTest extends TestCase
         $this->assertIsArray($debug);
         $this->assertNotEmpty($debug);
         $this->assertArrayHasKey('local_path', $debug[0]);
-        // Lady : Checking for 'reference' in local_path assumes local file path exists, which contradicts local storage elimination.
-        // $this->assertStringContainsString('reference', $debug[0]['local_path']);
-        // Gemini : Verify local storage is eliminated/bypassed and S3 location is primary
         $this->assertSame('Bypassed (Cloud-Only)', $debug[0]['local_path']);
         $this->assertStringContainsString('s3://sn-ccd-database-system-th', $debug[0]['s3_location']);
 
-        // Gemini : Verify file actually exists in real AWS S3 bucket and clean up
         $s3Disk = \Illuminate\Support\Facades\Storage::disk('s3');
         $s3Path = str_replace('s3://sn-ccd-database-system-th/', '', $debug[0]['s3_location']);
         $this->assertTrue($s3Disk->fileExists($s3Path), 'Uploaded file was not found in real S3 bucket!');

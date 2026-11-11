@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Clearance;
 
-// Gemini : OutstandingAuditController listing records missing hs_evidence_file_1..3 with document upload action
 use App\Domain\Compliance\Queries\GetOutstandingClearanceQuery;
 use App\Http\Controllers\Controller;
 use App\Models\Business\CustomerClearanceData;
@@ -13,9 +12,8 @@ use Illuminate\View\View;
 
 class OutstandingAuditController extends Controller
 {
-    // Lady : Inline query logic in controller violates Single Responsibility and hinders reuse across reporting.
-    /*
-    // [Previous Version - Inline Query in Controller]
+    /*  
+
     public function index(Request $request): View
     {
         $query = CustomerClearanceData::with(['customer', 'branch'])
@@ -36,15 +34,40 @@ class OutstandingAuditController extends Controller
         return view('clearance.outstanding', compact('records'));
     }
     */
-    // Gemini : GAP-06.3 — Extract outstanding records query into dedicated GetOutstandingClearanceQuery object
+    // Modeled after CustomerClearanceOutStandingController with full search filters, master branch/statistic lookups, and direct evidence attachment
     public function index(Request $request, GetOutstandingClearanceQuery $query): View
     {
-        $records = $query->execute($request->only(['job_no', 'customer_name']));
+        $filters = $request->only([
+            'job_no',
+            'customer_name',
+            'master_branch_id',
+            'imp_exp',
+            'hs_code',
+            'statistic_code_id',
+            'product_code_1',
+            'product_description',
+            'product_description_en',
+            'product_description_th',
+            'create_date',
+            'status',
+            'keyword',
+            'exist_reference_file_1',
+            'exist_reference_file_2',
+            'exist_hs_evidence_file_1',
+            'exist_hs_evidence_file_2',
+            'exist_hs_evidence_file_3',
+            'exist_hs_evidence_file_4',
+            'sort_by',
+            'sort_dir',
+        ]);
 
-        return view('clearance.outstanding', compact('records'));
+        $records = $query->execute($filters);
+        $branches = \App\Models\Business\MasterBranch::orderBy('branch_code')->get();
+        $statistics = \App\Models\Business\MasterStatistic::orderBy('statistics')->get();
+
+        return view('clearance.outstanding', compact('records', 'filters', 'branches', 'statistics'));
     }
 
-    // Gemini : Inject DocumentStorageService to mirror uploaded evidence files to AWS S3
     public function attachEvidence(Request $request, int $id, \App\Services\Storage\DocumentStorageService $storageService): RedirectResponse
     {
         $record = CustomerClearanceData::findOrFail($id);
@@ -59,13 +82,6 @@ class OutstandingAuditController extends Controller
 
         $cleanOriginal = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $file->getClientOriginalName());
         $filename = "{$record->job_no}_hs{$slot}_{$cleanOriginal}";
-
-        // Lady : Direct file->storeAs('hs_evidence', ..., 'public') only writes to local disk and fails to mirror compliance files to AWS S3 as required by corporate policy.
-        /*
-        $filename = "{$record->job_no}_hs{$slot}_" . time() . '.' . $file->getClientOriginalExtension();
-        $path = $file->storeAs('hs_evidence', $filename, 'public');
-        */
-        // Gemini : Use DocumentStorageService for local storage with automatic AWS S3 cloud synchronization
         $path = $storageService->store($file, 'hs_evidence', $filename);
 
         $field = "hs_evidence_file_{$slot}";
@@ -74,7 +90,6 @@ class OutstandingAuditController extends Controller
         $record->save();
 
         $cloudNote = $storageService->isCloudConfigured() ? ' (backed up to AWS S3)' : '';
-        // Gemini : Flash upload debug data containing destination address and S3 status
         $uploadHistory = $storageService->getUploadHistory();
         $redirect = back()->with('success', "Evidence attached successfully to slot {$slot} for Job {$record->job_no}{$cloudNote}.");
         if (!empty($uploadHistory)) {

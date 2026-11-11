@@ -18,7 +18,7 @@ return [
     |
     */
 
-    // Gemini : Default session driver fallback to 'file' to strictly avoid creating or requiring non-existent 'sessions' table
+    // Default session driver fallback to 'file' to strictly avoid creating or requiring non-existent 'sessions' table
     'driver' => env('SESSION_DRIVER', 'file'),
 
     /*
@@ -130,7 +130,7 @@ return [
 
     'cookie' => env(
         'SESSION_COOKIE',
-        Str::slug((string) env('APP_NAME', 'laravel')).'-session'
+        Str::slug((string) env('APP_NAME', 'laravel')) . '-session'
     ),
 
     /*

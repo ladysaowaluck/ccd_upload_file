@@ -83,7 +83,6 @@
             <h3 class="text-sm font-bold text-slate-800">Tariff & Quantity Units</h3>
         </div>
 
-        {{-- Lady : Unconstrained text inputs allowed entering strings longer than the database varchar(3) limits (e.g. 'C6213'), triggering SQLSTATE[22001] string truncation errors. --}}
         {{--
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
@@ -104,7 +103,6 @@
             </div>
         </div>
         --}}
-        {{-- Gemini : Add strict maxlength='3' and uppercase styling to conform to database column limits --}}
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Statistical Code</label>

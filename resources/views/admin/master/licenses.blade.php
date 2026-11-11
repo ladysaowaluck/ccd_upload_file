@@ -1,4 +1,3 @@
-{{-- Gemini : GAP-09 — Master Customs Licenses View (license_code, license_name) --}}
 @extends('layouts.app')
 
 @section('header_title', 'Master Customs Licenses')
@@ -46,7 +45,8 @@
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
         <form method="GET" action="{{ route('admin.master.licenses') }}" class="flex flex-col sm:flex-row gap-4">
             <div class="flex-1">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by license code or name..."
+                {{-- <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by license code or name..." ... > --}}
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by English or Thai license description..."
                     class="w-full text-sm rounded-lg border-slate-300 focus:ring-brand-500 focus:border-brand-500">
             </div>
             <div class="flex space-x-2">
@@ -67,20 +67,22 @@
                 <thead class="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider text-xs">
                     <tr>
                         <th class="px-6 py-3.5">ID</th>
-                        <th class="px-6 py-3.5">License Code</th>
-                        <th class="px-6 py-3.5">License Name</th>
+                        <!-- <th class="px-6 py-3.5">License Name</th> -->
+                        <th class="px-6 py-3.5">License (EN)</th>
+                        <th class="px-6 py-3.5">License (TH)</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200 bg-white">
                     @forelse ($licenses as $license)
                     <tr class="hover:bg-slate-50/80 transition">
                         <td class="px-6 py-3.5 text-xs text-slate-400 font-mono">#{{ $license->id }}</td>
-                        <td class="px-6 py-3.5 font-mono font-semibold text-brand-700">{{ $license->license_code }}</td>
-                        <td class="px-6 py-3.5 text-slate-900 font-medium">{{ $license->license_name }}</td>
+                        <!-- <td class="px-6 py-3.5 text-slate-900 font-medium">{{ $license->license_name }}</td> -->
+                        <td class="px-6 py-3.5 text-slate-900 font-medium">{{ $license->license_en }}</td>
+                        <td class="px-6 py-3.5 text-slate-600">{{ $license->license_th }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="3" class="px-6 py-12 text-center text-slate-400">
+                        <td colspan="4" class="px-6 py-12 text-center text-slate-400">
                             No licenses found matching your search.
                         </td>
                     </tr>

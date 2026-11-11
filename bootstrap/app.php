@@ -11,7 +11,6 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    // Lady : Only 'ensure.domain' middleware alias was registered, lacking 'role' alias for RBAC route enforcement.
     /*
     // [Previous Version - Only ensure.domain alias registered]
     ->withMiddleware(function (Middleware $middleware): void {
@@ -20,7 +19,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     */
-    // Gemini : GAP-02 — Register 'role' middleware alias for RoleAuthorizationMiddleware RBAC
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'ensure.domain' => \App\Http\Middleware\EnsureDomainWhitelisted::class,

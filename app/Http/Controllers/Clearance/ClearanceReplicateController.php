@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Clearance;
 
-// Gemini : MISS-01 — ClearanceReplicateController handles the duplicate-CCD workflow.
-// Shows form with auto-suggested next job no, then delegates duplication to the action class.
 use App\Domain\Clearance\Actions\GenerateJobSequenceAction;
 use App\Domain\Clearance\Actions\ReplicateClearanceRecordAction;
 use App\Http\Controllers\Controller;
@@ -14,9 +12,7 @@ use Illuminate\View\View;
 
 class ClearanceReplicateController extends Controller
 {
-    /**
-     * Show the replication form pre-filled with the next suggested job number.
-     */
+    // Show the replication form pre-filled with the next suggested job number.
     public function show(int $id, GenerateJobSequenceAction $sequence): View
     {
         $source = CustomerClearanceData::findOrFail($id);
@@ -32,9 +28,7 @@ class ClearanceReplicateController extends Controller
         return view('clearance.replicate', compact('source', 'suggestedNo'));
     }
 
-    /**
-     * Execute record duplication and redirect to edit page of the new record.
-     */
+    // Execute record duplication and redirect to edit page of the new record.
     public function execute(
         Request $request,
         int $id,

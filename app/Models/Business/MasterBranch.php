@@ -2,7 +2,6 @@
 
 namespace App\Models\Business;
 
-// Gemini : MasterBranch model bound to mysql connection
 use Illuminate\Database\Eloquent\Model;
 
 class MasterBranch extends Model

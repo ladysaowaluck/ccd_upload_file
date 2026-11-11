@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-// Gemini : Test suite for MISS-01 Record Replication (Duplicate CCD) workflow
+// Test suite for MISS-01 Record Replication (Duplicate CCD) workflow
 use App\Models\Auth\AdminUser;
 use App\Models\Business\CustomerClearanceData;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -20,9 +20,8 @@ class ClearanceReplicateTest extends TestCase
         $this->user = AdminUser::first() ?? AdminUser::factory()->create();
     }
 
-    /**
-     * Test replication page renders for authenticated user with prefilled sequence.
-     */
+    // Test replication page renders for authenticated user with prefilled sequence.
+    
     public function test_replicate_form_can_be_rendered(): void
     {
         $record = CustomerClearanceData::first();
@@ -35,9 +34,7 @@ class ClearanceReplicateTest extends TestCase
         $response->assertSee($record->job_no);
     }
 
-    /**
-     * Test record replication executes cleanly, copying tariff fields and leaving files blank.
-     */
+    // Test record replication executes cleanly, copying tariff fields and leaving files blank.
     public function test_record_can_be_replicated_to_new_job_number(): void
     {
         $source = CustomerClearanceData::whereNotNull('hs_code')->first();
@@ -74,9 +71,8 @@ class ClearanceReplicateTest extends TestCase
         $this->assertNull($duplicated->hs_evidence_file_4);
     }
 
-    /**
-     * Test validation rejects duplicate job numbers.
-     */
+    // Test validation rejects duplicate job numbers.
+    
     public function test_replication_rejects_existing_job_number(): void
     {
         $source = CustomerClearanceData::first();

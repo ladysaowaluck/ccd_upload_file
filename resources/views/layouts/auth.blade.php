@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-{{-- Gemini : Auth layout — sidebar-free shell for login, register, and forgot-password pages --}}
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full bg-slate-100">
 <head>
     <meta charset="utf-8">
@@ -33,16 +32,6 @@
 </head>
 <body class="h-full antialiased font-sans text-slate-800 bg-slate-100 flex flex-col min-h-screen">
 
-    {{-- Top brand bar --}}
-    <!-- <header class="bg-slate-900 border-b border-slate-800 h-14 flex items-center px-6">
-        <div class="flex items-center space-x-2">
-            <span class="inline-block w-3 h-3 bg-blue-500 rounded-sm"></span>
-            <span class="text-white text-sm font-semibold tracking-wider">SNC CCD SYSTEM</span>
-        </div>
-        <span class="ml-3 text-slate-500 text-xs">Customs Clearance Database</span>
-    </header> -->
-
-    {{-- Page content centered --}}
     <main class="flex-1 flex items-center justify-center py-10 px-4">
         <div class="w-full max-w-md">
 
@@ -74,7 +63,7 @@
 
     {{-- Footer --}}
     <footer class="py-4 text-center text-xs text-slate-400">
-        &copy; {{ date('Y') }} SNC-LAVALIN / Nissin Asia &bull; Internal Use Only
+        &copy; {{ date('Y') }} SNC / Nissin Asia &bull; Internal Use Only
     </footer>
 
 </body>

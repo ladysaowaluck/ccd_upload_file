@@ -2,7 +2,6 @@
 
 namespace App\Models\Auth;
 
-// Gemini : AdminOffice, AdminDepartment, AdminDivision organizational tree models on authdb
 use Illuminate\Database\Eloquent\Model;
 
 class AdminOffice extends Model

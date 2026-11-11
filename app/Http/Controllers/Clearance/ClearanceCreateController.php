@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Clearance;
 
-// Gemini : ClearanceCreateController for single manual CCD registration and edit
 use App\Domain\Clearance\Actions\GenerateJobSequenceAction;
 use App\Http\Controllers\Controller;
 use App\Models\Business\CustomerClearanceData;
@@ -17,9 +16,7 @@ use Illuminate\View\View;
 
 class ClearanceCreateController extends Controller
 {
-    // Lady : Direct controller coupling to GenerateJobSequenceAction bypasses domain service abstraction.
     /*
-    // [Previous Version - Direct Action Injection]
     protected GenerateJobSequenceAction $jobGenerator;
 
     public function __construct(GenerateJobSequenceAction $jobGenerator)
@@ -27,12 +24,12 @@ class ClearanceCreateController extends Controller
         $this->jobGenerator = $jobGenerator;
     }
     */
-    // Gemini : GAP-06.2 & GAP-11 — Injected ClearanceSequenceService, CreateClearanceRecordAction, and DocumentStorageService
     public function __construct(
         protected ClearanceSequenceService $sequenceService,
         protected \App\Domain\Clearance\Actions\CreateClearanceRecordAction $createAction,
         protected \App\Services\Storage\DocumentStorageService $storageService
-    ) {}
+    ) {
+    }
 
     public function create(): View
     {
@@ -45,7 +42,6 @@ class ClearanceCreateController extends Controller
         return view('clearance.create', compact('branches', 'customers', 'units', 'statistics', 'suggestedJobNo'));
     }
 
-    // Lady : Inline validation and manual file storage directly in the controller violates the Single Responsibility Principle (SRP) and bypasses the CreateClearanceRecordAction domain action.
     /*
     public function store(Request $request): RedirectResponse
     {
@@ -91,13 +87,11 @@ class ClearanceCreateController extends Controller
         return redirect()->route('clearance.index')->with('success', "Clearance record {$validated['job_no']} created successfully.");
     }
     */
-    // Gemini : GAP-10 & GAP-11 — Use StoreClearanceRecordRequest form request and delegate creation to CreateClearanceRecordAction
     public function store(\App\Http\Requests\StoreClearanceRecordRequest $request): RedirectResponse
     {
         $payload = array_merge($request->validated(), $request->allFiles());
         $record = $this->createAction->execute($payload);
 
-        // Gemini : Flash upload debug data containing destination address and S3 status
         $uploadHistory = $this->storageService->getUploadHistory();
         $redirect = redirect()->route('clearance.index')->with('success', "Clearance record {$record->job_no} created successfully.");
         if (!empty($uploadHistory)) {

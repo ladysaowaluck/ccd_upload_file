@@ -2,7 +2,6 @@
 
 namespace App\Domain\Clearance\Actions;
 
-// Gemini : Job number auto-sequence action replicating legacy /api/ccd_get_ym/{yymm} pattern
 use App\Models\Business\CustomerClearanceData;
 
 class GenerateJobSequenceAction
@@ -19,8 +18,15 @@ class GenerateJobSequenceAction
         $yymm = $yymm ?: date('ym');
         $prefix = "{$type}{$yymm}-";
 
+        /*
         $lastRecord = CustomerClearanceData::where('job_no', 'LIKE', "{$prefix}%")
             ->orderBy('job_no', 'desc')
+            ->first();
+        */
+
+        // Order by LENGTH(job_no) DESC, job_no DESC to ensure numeric sequence ordering when numbers exceed 4 digits (e.g. 10000+).
+        $lastRecord = CustomerClearanceData::where('job_no', 'LIKE', "{$prefix}%")
+            ->orderByRaw('LENGTH(job_no) DESC, job_no DESC')
             ->first();
 
         if (!$lastRecord || empty($lastRecord->job_no)) {
@@ -30,7 +36,6 @@ class GenerateJobSequenceAction
         $rawSeq = substr($lastRecord->job_no, strlen($prefix));
         $lastSequence = is_numeric($rawSeq) ? (int) $rawSeq : 0;
 
-        // Lady : Throwing an OverflowException when sequence reaches 9999 causes system interruption and breaks creation workflows when monthly volume is high. The legacy system (apiCcdController and ReplicateRecordCcd) never crashed; it safely incremented without hard caps.
         /*
         if ($lastSequence >= 9999) {
             throw new \OverflowException(
@@ -39,10 +44,14 @@ class GenerateJobSequenceAction
         }
         */
 
-        // Gemini : Safely increment running sequence with minimum 4-digit zero-padding matching legacy behavior
-        $nextSequence = str_pad((string)($lastSequence + 1), 4, '0', STR_PAD_LEFT);
+        // Guarantee unique sequence by checking existence in a loop to eliminate collisions.
+        do {
+            $lastSequence++;
+            $nextSequence = str_pad((string) $lastSequence, 4, '0', STR_PAD_LEFT);
+            $candidateJobNo = "{$prefix}{$nextSequence}";
+        } while (CustomerClearanceData::where('job_no', $candidateJobNo)->exists());
 
-        return "{$prefix}{$nextSequence}";
+        return $candidateJobNo;
     }
 }
 

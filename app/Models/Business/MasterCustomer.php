@@ -2,7 +2,6 @@
 
 namespace App\Models\Business;
 
-// Gemini : MasterCustomer schema matching actual database
 use Illuminate\Database\Eloquent\Model;
 
 class MasterCustomer extends Model

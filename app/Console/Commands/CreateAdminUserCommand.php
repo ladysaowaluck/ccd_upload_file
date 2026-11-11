@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-// Gemini : Command to create or upgrade an AdminUser with full superadmin privileges
 use App\Models\Auth\AdminPermission;
 use App\Models\Auth\AdminRole;
 use App\Models\Auth\AdminUser;
@@ -65,20 +64,20 @@ class CreateAdminUserCommand extends Command
         if ($user) {
             $this->warn("User [{$user->username}] already exists. Elevating permissions and resetting password...");
             $user->update([
-                'name'     => $name ?: $user->name,
-                'email'    => $email,
+                'name' => $name ?: $user->name,
+                'email' => $email,
                 'password' => Hash::make($password),
             ]);
         } else {
             $user = AdminUser::create([
-                'username'      => $username,
-                'name'          => $name,
-                'email'         => $email,
-                'password'      => Hash::make($password),
-                'avatar'        => null,
-                'office_id'     => 1,
+                'username' => $username,
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make($password),
+                'avatar' => null,
+                'office_id' => 1,
                 'department_id' => 1,
-                'division_id'   => 1,
+                'division_id' => 1,
             ]);
             $this->info("Created new user [{$user->username}].");
         }

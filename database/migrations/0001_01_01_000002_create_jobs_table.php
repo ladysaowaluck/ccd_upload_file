@@ -4,13 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
-    // Lady : 'jobs' and 'job_batches' do NOT exist in ccd_system_rds.sql or sn_user_auth_rds.sql — must not be created.
-    // Gemini : Comment out jobs and job_batches. Only failed_jobs exists in ccd_system_rds.sql — keep it active.
     public function up(): void
     {
         /*
@@ -38,15 +35,17 @@ return new class extends Migration
         });
         */
 
-        Schema::create('failed_jobs', function (Blueprint $table) {
-            $table->id();
-            $table->string('uuid')->unique();
-            $table->text('connection');
-            $table->text('queue');
-            $table->longText('payload');
-            $table->longText('exception');
-            $table->timestamp('failed_at')->useCurrent();
-        });
+        if (!Schema::hasTable('failed_jobs')) {
+            Schema::create('failed_jobs', function (Blueprint $table) {
+                $table->id();
+                $table->string('uuid')->unique();
+                $table->text('connection');
+                $table->text('queue');
+                $table->longText('payload');
+                $table->longText('exception');
+                $table->timestamp('failed_at')->useCurrent();
+            });
+        }
     }
 
     /**
@@ -54,7 +53,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Lady : jobs and job_batches were commented out — do not drop them here either.
         // Schema::dropIfExists('jobs');
         // Schema::dropIfExists('job_batches');
         Schema::dropIfExists('failed_jobs');

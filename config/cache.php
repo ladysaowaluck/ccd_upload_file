@@ -15,7 +15,7 @@ return [
     |
     */
 
-    // Gemini : Default cache store fallback to 'file' to strictly avoid creating or requiring non-existent 'cache' table
+    // Default cache store fallback to 'file' to strictly avoid creating or requiring non-existent 'cache' table
     'default' => env('CACHE_STORE', 'file'),
 
     /*
@@ -113,6 +113,6 @@ return [
     |
     */
 
-    'prefix' => env('CACHE_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-cache-'),
+    'prefix' => env('CACHE_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')) . '-cache-'),
 
 ];

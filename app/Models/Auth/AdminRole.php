@@ -2,7 +2,6 @@
 
 namespace App\Models\Auth;
 
-// Gemini : AdminRole model bound to authdb connection (table ccd_admin_roles)
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 

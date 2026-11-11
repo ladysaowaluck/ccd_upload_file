@@ -2,7 +2,6 @@
 
 namespace App\Domain\Clearance\Services;
 
-// Gemini : GAP-04 — Weekly HS Code Excel Export Service with dual-sheet Ranking and Record output
 use App\Models\Business\CustomerClearanceData;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -41,9 +40,7 @@ class WeeklyHsExportService
         return new WeeklyHsMultiSheetExport($records, $ranking);
     }
 
-    /**
-     * Count records matching the specified range.
-     */
+    //  Count records matching the specified range.
     public function countRecords(string $fromJobNo, string $toJobNo): int
     {
         return CustomerClearanceData::where('job_no', '>=', $fromJobNo)
@@ -57,7 +54,8 @@ class WeeklyHsMultiSheetExport implements WithMultipleSheets
     public function __construct(
         protected Collection $records,
         protected Collection $ranking
-    ) {}
+    ) {
+    }
 
     public function sheets(): array
     {
@@ -70,7 +68,9 @@ class WeeklyHsMultiSheetExport implements WithMultipleSheets
 
 class WeeklyHsRankingSheet implements FromCollection, WithTitle, WithHeadings
 {
-    public function __construct(protected Collection $ranking) {}
+    public function __construct(protected Collection $ranking)
+    {
+    }
 
     public function title(): string
     {
@@ -91,9 +91,9 @@ class WeeklyHsRankingSheet implements FromCollection, WithTitle, WithHeadings
         $rank = 1;
         return $this->ranking->map(function ($item) use (&$rank) {
             return [
-                'rank'           => $rank++,
-                'customer_name'  => $item->customer_name,
-                'total_job_count'=> $item->job_no_count,
+                'rank' => $rank++,
+                'customer_name' => $item->customer_name,
+                'total_job_count' => $item->job_no_count,
             ];
         });
     }
@@ -101,7 +101,9 @@ class WeeklyHsRankingSheet implements FromCollection, WithTitle, WithHeadings
 
 class WeeklyHsRecordSheet implements FromCollection, WithTitle, WithHeadings, WithMapping
 {
-    public function __construct(protected Collection $records) {}
+    public function __construct(protected Collection $records)
+    {
+    }
 
     public function title(): string
     {
@@ -162,8 +164,8 @@ class WeeklyHsRecordSheet implements FromCollection, WithTitle, WithHeadings, Wi
             $row->country_of_origin,
             $row->hs_code,
             $row->sequence_code,
-            $row->statistic_code,
-            $row->quantity_unit,
+            $row->statistic_code_id,
+            $row->quantity_unit_id,
             $row->privilege_code,
             $row->tariff_ad_valorem ? $row->tariff_ad_valorem . '%' : '0%',
             $row->reference_file_1 ? 'Attached' : '-',

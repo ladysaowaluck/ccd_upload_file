@@ -2,15 +2,20 @@
 
 namespace App\Models\Auth;
 
-// Gemini : AdminUser model bound to authdb connection (table admin_users) for authentication and RBAC
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use App\Notifications\Auth\VerifyEmailNotification;
+use App\Notifications\Auth\ResetPasswordNotification;
 
-class AdminUser extends Authenticatable
+// AdminUser updated with HasApiTokens, MustVerifyEmail, HasFactory, and notification hooks
+class AdminUser extends Authenticatable implements MustVerifyEmail
 {
-    use Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $connection = 'authdb';
     protected $table = 'admin_users';
@@ -19,17 +24,41 @@ class AdminUser extends Authenticatable
         'username',
         'name',
         'email',
+        'email_verified_at',
         'password',
         'avatar',
         'office_id',
         'department_id',
         'division_id',
+        // Allow email_token and email_token_at for registration verification flow
+        'email_token',
+        'email_token_at',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+
+    // Send email verification notification using custom signed API route.
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification());
+    }
+
+    // Send password reset notification using custom API reset link.
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
+    }
 
     public function roles(): BelongsToMany
     {

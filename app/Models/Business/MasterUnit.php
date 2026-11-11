@@ -2,7 +2,6 @@
 
 namespace App\Models\Business;
 
-// Gemini : MasterUnit matching actual unit column
 use Illuminate\Database\Eloquent\Model;
 
 class MasterUnit extends Model

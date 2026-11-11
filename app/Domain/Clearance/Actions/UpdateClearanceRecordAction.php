@@ -2,28 +2,24 @@
 
 namespace App\Domain\Clearance\Actions;
 
-// Gemini : GAP-05 — Action executing domain updates on CustomerClearanceData models with file handling
 use App\Models\Business\CustomerClearanceData;
 use App\Models\Business\MasterCustomer;
+use App\Models\Business\MasterLicense;
+use App\Models\Business\MasterStatistic;
+use App\Models\Business\MasterUnit;
 use Illuminate\Http\UploadedFile;
 
-// Gemini : GAP-07 — Inject DocumentStorageService for unified file storage and cloud sync
 use App\Services\Storage\DocumentStorageService;
 
 class UpdateClearanceRecordAction
 {
-    // Gemini : GAP-07 — Injected DocumentStorageService dependency
     public function __construct(
         protected DocumentStorageService $storageService
-    ) {}
+    ) {
+    }
 
-    /**
-     * Update an existing clearance record.
-     *
-     * @param CustomerClearanceData $record
-     * @param array $data
-     * @return CustomerClearanceData
-     */
+
+    // Update an existing clearance record.
     public function execute(CustomerClearanceData $record, array $data): CustomerClearanceData
     {
         // Sync customer name if master_customer_id is modified
@@ -39,19 +35,15 @@ class UpdateClearanceRecordAction
             if (!empty($data[$refField]) && $data[$refField] instanceof UploadedFile) {
                 $file = $data[$refField];
                 $cleanName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $file->getClientOriginalName());
-                // Gemini : Strip prior job prefixes to prevent filename nesting when re-uploading documents
                 $baseName = preg_replace('/^(?:CCD\d{4}-\d{4}_(?:reference_file_\d|rf\d|hs_evidence_file_\d|hs\d)_)+/', '', $cleanName);
                 $fileName = "{$record->job_no}_{$refField}_{$baseName}";
-                // Lady : Direct file->storeAs('public/reference') tightly couples action to local storage and bypasses S3 sync.
                 /*
                 $file->storeAs('public/reference', $fileName);
                 $data[$refField] = "reference/{$fileName}";
                 */
-                // Gemini : MISS-03 — Delete the old S3 object before uploading replacement to prevent orphaned bucket files
                 if (!empty($record->$refField)) {
                     $this->storageService->delete($record->$refField);
                 }
-                // Gemini : Use DocumentStorageService for local storage and optional S3 synchronization
                 $data[$refField] = $this->storageService->store($file, 'reference', $fileName);
             } else {
                 unset($data[$refField]);
@@ -62,46 +54,80 @@ class UpdateClearanceRecordAction
             if (!empty($data[$hsField]) && $data[$hsField] instanceof UploadedFile) {
                 $file = $data[$hsField];
                 $cleanName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $file->getClientOriginalName());
-                // Gemini : Strip prior job prefixes to prevent filename nesting when re-uploading documents
                 $baseName = preg_replace('/^(?:CCD\d{4}-\d{4}_(?:reference_file_\d|rf\d|hs_evidence_file_\d|hs\d)_)+/', '', $cleanName);
                 $fileName = "{$record->job_no}_{$hsField}_{$baseName}";
-                // Lady : Direct file->storeAs('public/hs_evidence') lacks centralized cloud sync abstraction.
                 /*
                 $file->storeAs('public/hs_evidence', $fileName);
                 $data[$refField] = "hs_evidence/{$fileName}";
                 */
-                // Gemini : MISS-03 — Delete the old S3 object before uploading replacement to prevent orphaned bucket files
                 if (!empty($record->$hsField)) {
                     $this->storageService->delete($record->$hsField);
                 }
-                // Gemini : Use DocumentStorageService for local storage and optional S3 synchronization
                 $data[$hsField] = $this->storageService->store($file, 'hs_evidence', $fileName);
             } else {
                 unset($data[$hsField]);
             }
         }
 
-        // Gemini : Defensive truncation against SQLSTATE[22001] column limit overflow
-        if (isset($data['quantity_unit'])) {
-            $data['quantity_unit'] = substr(trim((string)$data['quantity_unit']), 0, 3);
+        if (isset($data['quantity_unit_id'])) {
+            $data['quantity_unit_id'] = substr(trim((string) $data['quantity_unit_id']), 0, 3);
         }
-        if (isset($data['statistic_code'])) {
-            $data['statistic_code'] = substr(trim((string)$data['statistic_code']), 0, 3);
+        if (isset($data['statistic_code_id'])) {
+            $data['statistic_code_id'] = substr(trim((string) $data['statistic_code_id']), 0, 3);
         }
         if (isset($data['privilege_code'])) {
-            $data['privilege_code'] = substr(trim((string)$data['privilege_code']), 0, 3);
+            $data['privilege_code'] = substr(trim((string) $data['privilege_code']), 0, 3);
         }
         if (isset($data['sequence_code'])) {
-            $data['sequence_code'] = substr(trim((string)$data['sequence_code']), 0, 5);
+            $data['sequence_code'] = substr(trim((string) $data['sequence_code']), 0, 5);
         }
         if (isset($data['hs_code'])) {
-            $data['hs_code'] = substr(trim((string)$data['hs_code']), 0, 8);
+            $data['hs_code'] = substr(trim((string) $data['hs_code']), 0, 8);
         }
         if (isset($data['brand_name'])) {
-            $data['brand_name'] = substr(trim((string)$data['brand_name']), 0, 50);
+            $data['brand_name'] = substr(trim((string) $data['brand_name']), 0, 50);
         }
         if (isset($data['country_of_origin'])) {
-            $data['country_of_origin'] = substr(trim((string)$data['country_of_origin']), 0, 30);
+            $data['country_of_origin'] = substr(trim((string) $data['country_of_origin']), 0, 30);
+        }
+        if (isset($data['usage']) && !isset($data['usages'])) {
+            $data['usages'] = $data['usage'];
+        }
+        if (isset($data['function']) && !isset($data['functions'])) {
+            $data['functions'] = $data['function'];
+        }
+
+        /*
+        if (!empty($data['statistic_code']) && empty($data['statistic_code_id'])) {
+            $data['statistic_code_id'] = MasterStatistic::where('statistic_code_id', $data['statistic_code_id'])->value('id');
+        }
+        if (!empty($data['quantity_unit_id']) && empty($data['quantity_unit_id'])) {
+            $data['quantity_unit_id'] = MasterUnit::where('unit', $data['quantity_unit_id'])->value('id');
+        }
+        if (!empty($data['tariff_specific_rate_unit']) && empty($data['tariff_specific_rate_unit_id'])) {
+            $data['tariff_specific_rate_unit_id'] = MasterUnit::where('unit', $data['tariff_specific_rate_unit'])->value('id');
+        }
+        */
+
+        // Safely map statistic_code and quantity_unit input values to their respective schema fields.
+        if (!empty($data['statistic_code']) && empty($data['statistic_code_id'])) {
+            $data['statistic_code_id'] = substr(trim((string) $data['statistic_code']), 0, 3);
+        }
+        if (!empty($data['quantity_unit']) && empty($data['quantity_unit_id'])) {
+            $data['quantity_unit_id'] = substr(trim((string) $data['quantity_unit']), 0, 3);
+        }
+        if (!empty($data['tariff_specific_rate_unit']) && empty($data['tariff_specific_rate_unit_id'])) {
+            $data['tariff_specific_rate_unit_id'] = substr(trim((string) $data['tariff_specific_rate_unit']), 0, 10);
+        }
+
+        foreach ([1, 2, 3, 4] as $idx) {
+            $fkKey = "license{$idx}_name_id";
+            if (!empty($data[$fkKey]) && !is_numeric($data[$fkKey])) {
+                $licName = trim((string) $data[$fkKey]);
+                $data[$fkKey] = MasterLicense::where('license_en', $licName)
+                    ->orWhere('license_th', $licName)
+                    ->value('id');
+            }
         }
 
         $data['update_date'] = date('Y-m-d');
