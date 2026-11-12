@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('title', 'CCD Database OutStanding')
-@section('header_title', 'Outstanding Customs Evidence Compliance')
+@section('header_title', 'CCD Database OutStanding')
 
 @section('content')
 <div class="space-y-4" x-data="{ filterOpen: {{ count(array_filter(request()->except(['page', 'sort_by', 'sort_dir']))) > 0 ? 'true' : 'true' }} }">

@@ -47,13 +47,11 @@ class DocumentStorageService
         $s3Key = $relativePath;
         $storedPath = $relativePath;
         $s3Synced = false;
-        $localSaved = false;
-        $serverSaved = false;
         $bucket = $this->getCloudBucket();
         $region = $this->getCloudRegion();
         $fileSize = $file->getSize() ?: (file_exists($file->getRealPath()) ? filesize($file->getRealPath()) : 0);
 
-        // 1. Once save on AWS bucket
+        // 1. Upload to AWS S3 bucket only.
         if ($this->isCloudConfigured()) {
             try {
                 $realPath = $file->getRealPath();
@@ -73,30 +71,30 @@ class DocumentStorageService
             }
         }
 
-        // 2. Save to local AWS server (43.210.79.67) as the previous version (/mnt/efs/reference and /mnt/efs/hs_evidence)
-        $serverLocation = "{$this->serverStoragePath}/{$directory}/{$fileName}";
-        if (is_dir($this->serverStoragePath)) {
-            try {
-                $targetDir = "{$this->serverStoragePath}/{$directory}";
-                if (!is_dir($targetDir)) {
-                    @mkdir($targetDir, 0775, true);
-                }
-                $serverSaved = (bool) @copy($file->getRealPath(), $serverLocation);
-
-                // Mirror to /mnt/efs/evidence if stored in hs_evidence for compatibility with the previous version
-                if ($serverSaved && $directory === 'hs_evidence') {
-                    $evidenceDir = "{$this->serverStoragePath}/evidence";
-                    if (!is_dir($evidenceDir)) {
-                        @mkdir($evidenceDir, 0775, true);
-                    }
-                    @copy($serverLocation, "{$evidenceDir}/{$fileName}");
-                }
-            } catch (\Throwable $e) {
-                Log::warning("DocumentStorageService: Direct /mnt/efs save failed: {$e->getMessage()}", [
-                    'path' => $serverLocation,
-                ]);
-            }
-        }
+        // Gemini : Commented out - local Linux server (/mnt/efs) upload disabled. S3 is the sole upload target.
+        // $serverLocation = "{$this->serverStoragePath}/{$directory}/{$fileName}";
+        // if (is_dir($this->serverStoragePath)) {
+        //     try {
+        //         $targetDir = "{$this->serverStoragePath}/{$directory}";
+        //         if (!is_dir($targetDir)) {
+        //             @mkdir($targetDir, 0775, true);
+        //         }
+        //         $serverSaved = (bool) @copy($file->getRealPath(), $serverLocation);
+        //
+        //         // Mirror to /mnt/efs/evidence if stored in hs_evidence for backward compatibility.
+        //         if ($serverSaved && $directory === 'hs_evidence') {
+        //             $evidenceDir = "{$this->serverStoragePath}/evidence";
+        //             if (!is_dir($evidenceDir)) {
+        //                 @mkdir($evidenceDir, 0775, true);
+        //             }
+        //             @copy($serverLocation, "{$evidenceDir}/{$fileName}");
+        //         }
+        //     } catch (\Throwable $e) {
+        //         Log::warning("DocumentStorageService: Direct /mnt/efs save failed: {$e->getMessage()}", [
+        //             'path' => $serverLocation,
+        //         ]);
+        //     }
+        // }
 
         /*
         try {
@@ -131,61 +129,29 @@ class DocumentStorageService
         }
         */
 
-        $localPath = Storage::disk($this->localDisk)->path($relativePath);
-        $localUrl = Storage::disk($this->localDisk)->url($relativePath);
         $s3Location = $bucket ? "s3://{$bucket}/{$s3Key}" : "s3://unknown/{$s3Key}";
         $s3Url = ($bucket && $s3Synced) ? Storage::disk($this->cloudDisk)->url($s3Key) : null;
 
-        /*
+        // S3-only status output for CLI/artisan runs. Web requests are silent.
         $s3StatusText = $s3Synced ? 'SUCCESS' : 'FAILED / SKIPPED';
-        $serverStatusText = ($serverSaved || $localSaved) ? 'SUCCESS' : 'FAILED';
-        $serverDisplayPath = is_dir($this->serverStoragePath) ? $serverLocation : "/mnt/efs/{$relativePath}";
-
-        echo PHP_EOL . "================================================================================" . PHP_EOL;
-        echo " [DEBUG STORAGE UPLOAD]" . PHP_EOL;
-        echo " - File Name        : {$fileName}" . PHP_EOL;
-        echo " - Size             : {$fileSize} bytes" . PHP_EOL;
-        echo " - 1. AWS Bucket    : [{$s3StatusText}] {$s3Location}" . PHP_EOL;
-        echo " - 2. Local Server  : [{$serverStatusText}] {$serverDisplayPath}" . PHP_EOL;
-        echo " -    Local Storage : {$localPath}" . PHP_EOL;
-        echo "================================================================================" . PHP_EOL;
-        */
-
-        // Output upload results for 1. AWS Bucket, and 2. Local AWS Server (43.210.79.67) previous version (/mnt/efs). Local device project save is disabled.
-        $s3StatusText = $s3Synced ? 'SUCCESS' : 'FAILED / SKIPPED';
-        $serverStatusText = $serverSaved ? 'SUCCESS' : (is_dir($this->serverStoragePath) ? 'FAILED' : 'CONFIGURED (/mnt/efs Linux mount)');
-        $serverDisplayPath = is_dir($this->serverStoragePath) ? $serverLocation : "{$this->serverStoragePath}/{$relativePath}";
-
-        // echo PHP_EOL . "================================================================================" . PHP_EOL;
-        // echo " [DEBUG STORAGE UPLOAD]" . PHP_EOL;
-        // echo " - File Name        : {$fileName}" . PHP_EOL;
-        // echo " - Size             : {$fileSize} bytes" . PHP_EOL;
-        // echo " - 1. AWS Bucket    : [{$s3StatusText}] {$s3Location}" . PHP_EOL;
-        // echo " - 2. AWS Server EFS: [{$serverStatusText}] {$serverDisplayPath} (Server: 43.210.79.67)" . PHP_EOL;
-        // echo " -    Local Device  : Bypassed (Disabled in favor of Local AWS Server /mnt/efs)" . PHP_EOL;
-        // echo "================================================================================" . PHP_EOL;
-        // Only output debug text when running via CLI/artisan tests, avoiding output buffering issues in web requests.
         if (app()->runningInConsole()) {
-            echo PHP_EOL . "================================================================================" . PHP_EOL;
+            echo PHP_EOL . "=================================================================================" . PHP_EOL;
             echo " [DEBUG STORAGE UPLOAD]" . PHP_EOL;
             echo " - File Name        : {$fileName}" . PHP_EOL;
             echo " - Size             : {$fileSize} bytes" . PHP_EOL;
             echo " - 1. AWS Bucket    : [{$s3StatusText}] {$s3Location}" . PHP_EOL;
-            echo " - 2. AWS Server EFS: [{$serverStatusText}] {$serverDisplayPath} (Server: 43.210.79.67)" . PHP_EOL;
-            echo " -    Local Device  : Bypassed (Disabled in favor of Local AWS Server /mnt/efs)" . PHP_EOL;
-            echo "================================================================================" . PHP_EOL;
+            echo " -    Local Server  : DISABLED (commented out - S3 only)" . PHP_EOL;
+            echo "=================================================================================" . PHP_EOL;
         }
 
-        // Provide full details for AWS S3 and local AWS server (/mnt/efs) with backward-compatible local_path key.
+        // S3-only upload info. local_path key kept for backward compatibility.
         $debugInfo = [
             'file_name' => $fileName,
             'original_name' => $file->getClientOriginalName(),
             'size_bytes' => $fileSize,
             'directory' => $directory,
-            'local_server' => $serverDisplayPath,
-            'local_path' => $serverDisplayPath,
+            'local_path' => 'DISABLED (S3 only)',
             'local_url' => null,
-            'local_device' => 'Bypassed (Saved to AWS Server EFS /mnt/efs instead)',
             's3_synced' => $s3Synced,
             's3_bucket' => $bucket,
             's3_region' => $region,
@@ -195,7 +161,7 @@ class DocumentStorageService
 
         $this->uploadHistory[] = $debugInfo;
 
-        Log::info("DocumentStorage: File uploaded to AWS S3 and local server (/mnt/efs)", $debugInfo);
+        Log::info("DocumentStorage: File uploaded to AWS S3 (local server /mnt/efs is disabled).", $debugInfo);
 
         return $storedPath;
     }
@@ -243,17 +209,24 @@ class DocumentStorageService
         ];
         */
 
-        // Return active paths for local AWS server mount (/mnt/efs/reference and /mnt/efs/hs_evidence) and AWS S3 cloud bucket with local_path fallback.
-        $serverPath = is_dir($this->serverStoragePath)
-            ? "{$this->serverStoragePath}/{$cleanPath}"
-            : "/mnt/efs/{$cleanPath}";
+        // Gemini : Commented out - local server path removed. Returns S3-only locations.
+        // $serverPath = is_dir($this->serverStoragePath)
+        //     ? "{$this->serverStoragePath}/{$cleanPath}"
+        //     : "/mnt/efs/{$cleanPath}";
+        //
+        // return [
+        //     'local_server' => $serverPath,
+        //     'local_path'   => $serverPath,
+        //     'local_url'    => null,
+        //     's3_location'  => $bucket ? "s3://{$bucket}/{$cleanPath}" : null,
+        //     's3_url'       => ($bucket && $this->isCloudConfigured()) ? Storage::disk($this->cloudDisk)->url($cleanPath) : null,
+        // ];
 
         return [
-            'local_server' => $serverPath,
-            'local_path'   => $serverPath,
-            'local_url'    => null,
-            's3_location'  => $bucket ? "s3://{$bucket}/{$cleanPath}" : null,
-            's3_url'       => ($bucket && $this->isCloudConfigured()) ? Storage::disk($this->cloudDisk)->url($cleanPath) : null,
+            'local_path' => 'DISABLED (S3 only)',
+            'local_url' => null,
+            's3_location' => $bucket ? "s3://{$bucket}/{$cleanPath}" : null,
+            's3_url' => ($bucket && $this->isCloudConfigured()) ? Storage::disk($this->cloudDisk)->url($cleanPath) : null,
         ];
     }
 
@@ -311,11 +284,10 @@ class DocumentStorageService
     {
         $cleanPath = ltrim($path, '/');
 
-        // Check local AWS server (/mnt/efs) first if available
-        $serverFile = "{$this->serverStoragePath}/{$cleanPath}";
-        if (file_exists($serverFile)) {
-            return true;
-        }
+        // $serverFile = "{$this->serverStoragePath}/{$cleanPath}";
+        // if (file_exists($serverFile)) {
+        //     return true;
+        // }
 
         /*
         if (Storage::disk($this->localDisk)->exists($cleanPath)) {
@@ -323,7 +295,7 @@ class DocumentStorageService
         }
         */
 
-        // Fallback to check AWS S3 cloud bucket.
+        // Check AWS S3 cloud bucket.
         if ($this->isCloudConfigured()) {
             return Storage::disk($this->cloudDisk)->fileExists($cleanPath);
         }
@@ -331,8 +303,7 @@ class DocumentStorageService
         return false;
     }
 
-    // Get the URL for a file from local AWS server or AWS S3 bucket.
-    
+    // Get the URL for a file from AWS S3 bucket.
     public function getUrl(string $path): string
     {
         $cleanPath = ltrim($path, '/');
@@ -351,23 +322,23 @@ class DocumentStorageService
         return asset('storage/' . $cleanPath);
     }
 
-    // Delete a file from local AWS server (/mnt/efs) and AWS S3 bucket.
+    // Delete a file from AWS S3 bucket only.
     public function delete(string $path): bool
     {
         $cleanPath = ltrim($path, '/');
         $deleted = false;
 
-        // Delete from local AWS server (/mnt/efs) if exists.
-        $serverFile = "{$this->serverStoragePath}/{$cleanPath}";
-        if (file_exists($serverFile)) {
-            $deleted = @unlink($serverFile) || $deleted;
-        }
-
-        // Also delete from /mnt/efs/evidence if mirroring
-        $evidenceMirror = "{$this->serverStoragePath}/evidence/" . basename($cleanPath);
-        if (file_exists($evidenceMirror)) {
-            @unlink($evidenceMirror);
-        }
+        // Gemini : Commented out - local Linux server (/mnt/efs) deletion disabled. S3 only.
+        // $serverFile = "{$this->serverStoragePath}/{$cleanPath}";
+        // if (file_exists($serverFile)) {
+        //     $deleted = @unlink($serverFile) || $deleted;
+        // }
+        //
+        // // Also delete /mnt/efs/evidence mirror if applicable.
+        // $evidenceMirror = "{$this->serverStoragePath}/evidence/" . basename($cleanPath);
+        // if (file_exists($evidenceMirror)) {
+        //     @unlink($evidenceMirror);
+        // }
 
         /*
         if (Storage::disk($this->localDisk)->exists($cleanPath)) {
@@ -375,7 +346,7 @@ class DocumentStorageService
         }
         */
 
-        // Also delete from AWS S3 cloud bucket if configured.
+        // Delete from AWS S3 cloud bucket if configured.
         if ($this->isCloudConfigured() && Storage::disk($this->cloudDisk)->fileExists($cleanPath)) {
             $deleted = Storage::disk($this->cloudDisk)->delete($cleanPath) || $deleted;
         }
@@ -383,17 +354,17 @@ class DocumentStorageService
         return $deleted;
     }
 
-    // Stream and download document file directly from local AWS server (/mnt/efs) with S3 fallback.
+    // Stream and download document file directly from AWS S3 bucket.
     public function download(string $relativePath, ?string $downloadName = null)
     {
         $cleanPath = ltrim($relativePath, '/');
         $fileName = $downloadName ?? basename($cleanPath);
 
-        // 1. Download directly from local AWS server (/mnt/efs) if mounted
-        $serverFile = "{$this->serverStoragePath}/{$cleanPath}";
-        if (file_exists($serverFile) && is_readable($serverFile)) {
-            return response()->download($serverFile, $fileName);
-        }
+        // Gemini : Commented out - local Linux server (/mnt/efs) download disabled. S3 is primary source.
+        // $serverFile = "{$this->serverStoragePath}/{$cleanPath}";
+        // if (file_exists($serverFile) && is_readable($serverFile)) {
+        //     return response()->download($serverFile, $fileName);
+        // }
 
         /*
         if (Storage::disk($this->localDisk)->exists($cleanPath)) {
@@ -401,11 +372,11 @@ class DocumentStorageService
         }
         */
 
-        // 2. Fallback to AWS S3 cloud bucket
+        // Download from AWS S3 cloud bucket.
         if ($this->isCloudConfigured() && Storage::disk($this->cloudDisk)->fileExists($cleanPath)) {
             return Storage::disk($this->cloudDisk)->download($cleanPath, $fileName);
         }
 
-        abort(404, "Document '{$fileName}' was not found on local AWS server (43.210.79.67 /mnt/efs) or AWS S3 bucket.");
+        abort(404, "Document '{$fileName}' was not found on AWS S3 bucket.");
     }
 }
