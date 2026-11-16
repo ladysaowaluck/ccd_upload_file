@@ -12,7 +12,6 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     /*
-    // [Previous Version - Only ensure.domain alias registered]
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'ensure.domain' => \App\Http\Middleware\EnsureDomainWhitelisted::class,
@@ -23,6 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'ensure.domain' => \App\Http\Middleware\EnsureDomainWhitelisted::class,
             'role'          => \App\Http\Middleware\RoleAuthorizationMiddleware::class,
+            'can.write'     => \App\Http\Middleware\EnsureUserCanWrite::class,
+            'can.download'  => \App\Http\Middleware\EnsureUserCanDownload::class,
+            'can.edit'      => \App\Http\Middleware\EnsureUserCanEdit::class,
+            'can.delete'    => \App\Http\Middleware\EnsureUserCanDelete::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

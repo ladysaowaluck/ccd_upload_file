@@ -83,12 +83,19 @@
             <div>• <strong>Output Format:</strong> <code class="font-mono bg-slate-200 px-1 py-0.5 rounded text-slate-800">HS_Code{MM}-{From}_{MM}-{To}.xlsx</code></div>
         </div>
 
-        <div class="flex justify-end pt-3">
-            <button type="submit" class="py-2.5 px-6 bg-brand-700 hover:bg-brand-800 text-white font-semibold text-xs rounded-lg shadow-sm transition flex items-center space-x-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                <span>Download Weekly Report</span>
-            </button>
-        </div>
+        {{-- Only render Download Weekly Report button if the user has download permissions. --}}
+        @if(auth()->user()?->canDownload())
+            <div class="flex justify-end pt-3">
+                <button type="submit" class="py-2.5 px-6 bg-brand-700 hover:bg-brand-800 text-white font-semibold text-xs rounded-lg shadow-sm transition flex items-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <span>Download Weekly Report</span>
+                </button>
+            </div>
+        @else
+            <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 text-center font-medium">
+                Your account is currently read-only. Report export and downloads are restricted.
+            </div>
+        @endif
     </form>
 </div>
 @endsection

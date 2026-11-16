@@ -67,11 +67,62 @@ class User extends Authenticatable
         return $this->status === 'approved' && !empty($this->email_verified_at);
     }
 
-    /**
-     * Determine whether the user account is still pending verification.
-     */
+    // Determine whether the user account is still pending verification.
     public function isPending(): bool
     {
         return $this->status === 'pending';
+    }
+
+    // Capability checks ensuring polymorphic compatibility with AdminUser
+    public function hasAnyRole(): bool
+    {
+        return false;
+    }
+
+    public function isReadOnly(): bool
+    {
+        return true;
+    }
+
+    // Stubs for granular role permissions adhering to Liskov Substitution Principle (LSP)
+    public function isStandard(): bool
+    {
+        return false;
+    }
+
+    public function canCreate(): bool
+    {
+        return false;
+    }
+
+    public function canUpload(): bool
+    {
+        return false;
+    }
+
+    public function canWrite(): bool
+    {
+        return false;
+    }
+
+    // Stubs false for unassigned users who cannot download files or reports
+    public function canDownload(): bool
+    {
+        return false;
+    }
+
+    public function canEdit(): bool
+    {
+        return false;
+    }
+
+    public function canDelete(): bool
+    {
+        return false;
+    }
+
+    public function isAdmin(): bool
+    {
+        return false;
     }
 }

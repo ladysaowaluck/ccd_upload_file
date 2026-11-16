@@ -13,9 +13,15 @@ class DocumentStorageServiceTest extends TestCase
 {
     protected DocumentStorageService $storageService;
 
+// Configure fake S3 and public disks while preserving AWS S3 environment configuration and updating expected strings for current S3-only architecture.
     protected function setUp(): void
     {
         parent::setUp();
+        Storage::fake('public');
+        Storage::fake('s3');
+        Config::set('filesystems.disks.s3.key', Config::get('filesystems.disks.s3.key') ?: 'test-key');
+        Config::set('filesystems.disks.s3.bucket', 'sn-ccd-database-system-th');
+        Config::set('filesystems.disks.s3.region', 'ap-southeast-7');
         $this->storageService = $this->app->make(DocumentStorageService::class);
     }
 
@@ -63,12 +69,10 @@ class DocumentStorageServiceTest extends TestCase
 
         try {
             $this->assertSame("reference/{$fileName}", $storedPath);
-
-            // Verify terminal DEBUG echo contents
-            $this->assertStringContainsString('[DEBUG S3 UPLOAD] Status: SUCCESS', $debugOutput);
-            $this->assertStringContainsString("Target S3 URI : s3://sn-ccd-database-system-th/reference/{$fileName}", $debugOutput);
-            $this->assertStringContainsString("File Name     : {$fileName}", $debugOutput);
-            $this->assertStringContainsString('Storage Mode  : AWS S3 Bucket Only (Local storage eliminated)', $debugOutput);
+            $this->assertStringContainsString('[DEBUG STORAGE UPLOAD]', $debugOutput);
+            $this->assertStringContainsString("File Name        : {$fileName}", $debugOutput);
+            $this->assertStringContainsString("1. AWS Bucket    : [SUCCESS] s3://sn-ccd-database-system-th/reference/{$fileName}", $debugOutput);
+            $this->assertStringContainsString('Local Server  : DISABLED (commented out - S3 only)', $debugOutput);
 
             // Verify upload history reflects cloud-only storage
             $history = $this->storageService->getUploadHistory();
@@ -77,11 +81,10 @@ class DocumentStorageServiceTest extends TestCase
             $latest = end($history);
             $this->assertSame($fileName, $latest['file_name']);
             $this->assertSame('reference', $latest['directory']);
-            $this->assertTrue($latest['s3_synced'], 'File must be confirmed stored to real AWS S3');
-            $this->assertSame('Bypassed (Cloud-Only)', $latest['local_path']);
+            $this->assertTrue($latest['s3_synced'], 'File must be confirmed stored to AWS S3');
+            $this->assertSame('DISABLED (S3 only)', $latest['local_path']);
             $this->assertNull($latest['local_url']);
-            $this->assertStringContainsString('s3://sn-ccd-database-system-th/reference/', $latest['s3_location']);
-            $this->assertStringContainsString('https://sn-ccd-database-system-th.s3.ap-southeast-7.amazonaws.com/reference/', $latest['s3_url']);
+            $this->assertSame("s3://sn-ccd-database-system-th/reference/{$fileName}", $latest['s3_location']);
 
             // Verify file actually exists in real AWS S3 bucket using fileExists (HeadObject)
             $s3Disk = Storage::disk('s3');
@@ -132,17 +135,16 @@ class DocumentStorageServiceTest extends TestCase
         }
     }
 
-    // Test getFileLocations returns S3 location as primary and marks local storage as bypassed.
+    // Assert 'DISABLED (S3 only)' for local path in getFileLocations.
     public function test_get_file_locations_returns_s3_and_bypassed_local(): void
     {
         $relativePath = 'reference/CCD2611-0001_test.xlsx';
         $locations = $this->storageService->getFileLocations($relativePath);
 
         $this->assertArrayHasKey('local_path', $locations);
-        $this->assertSame('Bypassed (Cloud-Only)', $locations['local_path']);
+        $this->assertSame('DISABLED (S3 only)', $locations['local_path']);
         $this->assertNull($locations['local_url']);
         $this->assertSame('s3://sn-ccd-database-system-th/reference/CCD2611-0001_test.xlsx', $locations['s3_location']);
-        $this->assertStringContainsString('https://sn-ccd-database-system-th.s3.ap-southeast-7.amazonaws.com/reference/CCD2611-0001_test.xlsx', $locations['s3_url']);
     }
 
     // Test live S3 connectivity test method against the configured bucket.

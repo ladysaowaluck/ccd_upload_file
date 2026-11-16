@@ -90,9 +90,62 @@ class AdminUser extends Authenticatable implements MustVerifyEmail
         return $this->roles->contains('slug', $roleSlug);
     }
 
+    // Derive admin status strictly by checking the 'administrator' role slug.
     public function isAdmin(): bool
     {
-        return $this->roles->contains('id', 1) || $this->hasRole('administrator');
+        return $this->hasRole('administrator');
+    }
+
+    public function hasAnyRole(): bool
+    {
+        return $this->roles->isNotEmpty();
+    }
+
+    public function isReadOnly(): bool
+    {
+        return !$this->hasAnyRole();
+    }
+
+    public function hasElevatedRole(): bool
+    {
+        return $this->isAdmin() || $this->hasRole('staff') || $this->hasRole('power_user');
+    }
+
+    public function isStandard(): bool
+    {
+        return $this->hasRole('standard') && !$this->hasElevatedRole();
+    }
+
+    public function canCreate(): bool
+    {
+        return $this->hasAnyRole();
+    }
+
+    public function canUpload(): bool
+    {
+        return $this->hasAnyRole();
+    }
+
+    public function canDownload(): bool
+    {
+        return $this->hasAnyRole();
+    }
+
+    // Standard users and unassigned users cannot edit records
+    public function canEdit(): bool
+    {
+        return $this->hasAnyRole() && !$this->isStandard();
+    }
+
+    // Standard users and unassigned users cannot delete records
+    public function canDelete(): bool
+    {
+        return $this->hasAnyRole() && !$this->isStandard();
+    }
+
+    public function canWrite(): bool
+    {
+        return $this->canCreate();
     }
 }
 

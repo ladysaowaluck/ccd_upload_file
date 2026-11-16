@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Domain\MasterData\Services\BatchCustomerNameSyncService;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\MasterCustomerRequest;
 use App\Models\Business\CustomerClearanceData;
 use App\Models\Business\MasterCustomer;
 use Illuminate\Http\RedirectResponse;
@@ -30,47 +31,75 @@ class MasterCustomerController extends Controller
 
         $customers = $query->orderBy('company_name')->paginate(25)->withQueryString();
 
-        return view('admin.customers.index', compact('customers'));
+        return view('admin.master.customers.index', compact('customers'));
     }
 
-    /*
-    public function syncNames(Request $request): RedirectResponse
+    public function store(MasterCustomerRequest $request): RedirectResponse
     {
-        $request->validate([
-            'master_customer_id' => 'required|exists:master_customers,id',
+        MasterCustomer::create([
+            'company_name' => $request->input('company_name'),
+            'tax_id'       => $request->input('tax_id'),
+            'is_enable'    => $request->input('is_enable', 0),
         ]);
 
-        $customer = MasterCustomer::findOrFail($request->input('master_customer_id'));
-
-        $updatedCount = CustomerClearanceData::where('master_customer_id', $customer->id)
-            ->update(['customer_name' => $customer->company_name]);
-
-        return back()->with('success', "Harmonized customer name '{$customer->company_name}' across {$updatedCount} clearance records.");
+        return redirect()->route('admin.master.customers.index')
+            ->with('success', "Customer '{$request->input('company_name')}' created successfully.");
     }
-    */
-    /*
-    public function syncNames(Request $request, BatchCustomerNameSyncService $syncService): RedirectResponse
+
+    public function edit(int $id): View
     {
-        $request->validate([
-            'master_customer_id' => 'required|exists:master_customers,id',
+        $customer = MasterCustomer::findOrFail($id);
+        return view('admin.master.customers.edit', compact('customer'));
+    }
+
+    public function update(MasterCustomerRequest $request, int $id, BatchCustomerNameSyncService $syncService): RedirectResponse
+    {
+        $customer    = MasterCustomer::findOrFail($id);
+        $nameChanged = $customer->company_name !== $request->input('company_name');
+
+        $customer->update([
+            'company_name' => $request->input('company_name'),
+            'tax_id'       => $request->input('tax_id'),
+            'is_enable'    => $request->input('is_enable', $customer->is_enable),
         ]);
 
-        $customerId = (int) $request->input('master_customer_id');
-        $customer = MasterCustomer::findOrFail($customerId);
+        $synced = 0;
+        if ($nameChanged) {
+            $synced = $syncService->sync($customer->id);
+        }
 
-        $updatedCount = $syncService->sync($customerId);
+        $message = "Customer '{$customer->company_name}' updated.";
+        if ($synced > 0) {
+            $message .= " Name synced to {$synced} clearance record(s).";
+        }
 
-        return back()->with('success', "Harmonized customer name '{$customer->company_name}' across {$updatedCount} clearance records.");
+        return redirect()->route('admin.master.customers.index')->with('success', $message);
     }
-    */
-    public function syncNames(\App\Http\Requests\MasterCustomerRequest $request, BatchCustomerNameSyncService $syncService): RedirectResponse
+
+    public function destroy(int $id): RedirectResponse
+    {
+        $customer = MasterCustomer::findOrFail($id);
+
+        $linkedCount = CustomerClearanceData::where('master_customer_id', $id)->count();
+        if ($linkedCount > 0) {
+            return redirect()->route('admin.master.customers.index')
+                ->with('error', "Cannot delete '{$customer->company_name}' — {$linkedCount} clearance record(s) are still linked.");
+        }
+
+        $name = $customer->company_name;
+        $customer->delete();
+
+        return redirect()->route('admin.master.customers.index')
+            ->with('success', "Customer '{$name}' deleted.");
+    }
+
+    public function syncNames(MasterCustomerRequest $request, BatchCustomerNameSyncService $syncService): RedirectResponse
     {
         $customerId = (int) $request->validated('master_customer_id', $request->input('master_customer_id'));
-        $customer = MasterCustomer::findOrFail($customerId);
+        $customer   = MasterCustomer::findOrFail($customerId);
 
         $updatedCount = $syncService->sync($customerId);
 
         return back()->with('success', "Harmonized customer name '{$customer->company_name}' across {$updatedCount} clearance records.");
     }
 }
-

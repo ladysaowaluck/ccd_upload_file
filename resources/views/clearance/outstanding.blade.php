@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('title', 'CCD Database OutStanding')
-@section('header_title', 'CCD Database OutStanding')
+@section('header_title', 'Outstanding Customs Evidence Compliance')
 
 @section('content')
 <div class="space-y-4" x-data="{ filterOpen: {{ count(array_filter(request()->except(['page', 'sort_by', 'sort_dir']))) > 0 ? 'true' : 'true' }} }">
@@ -32,13 +32,16 @@
                 <span x-text="filterOpen ? 'Hide Filters' : 'Show Filters'"></span>
             </button>
 
-            <a href="{{ route('clearance.create') }}"
-                class="inline-flex items-center px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white font-semibold text-xs rounded-lg shadow-sm transition">
-                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Create
-            </a>
+            <!-- Render Create button only if the user has write privileges. -->
+            @if(auth()->user()?->canWrite())
+                <a href="{{ route('clearance.create') }}"
+                    class="inline-flex items-center px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white font-semibold text-xs rounded-lg shadow-sm transition">
+                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Create
+                </a>
+            @endif
         </div>
     </div>
 
@@ -112,6 +115,7 @@
                     </div>
                 </div>
 
+                <!-- Agent : Added brand_name, model_name, country_of_origin, product_code_2 filter inputs -->
                 <!-- Filter Column 2: Descriptions & Free Keyword -->
                 <div class="space-y-3 border-r-0 md:border-r md:border-slate-200 md:pr-6">
                     <h4 class="font-bold text-slate-700 uppercase tracking-wider text-[11px] border-b pb-1">Product & Free Keyword</h4>
@@ -131,6 +135,30 @@
                     <div>
                         <label class="block font-semibold text-slate-600 mb-1">Product code 1</label>
                         <input type="text" name="product_code_1" value="{{ request('product_code_1') }}" placeholder="Filter Product code..."
+                            class="w-full text-xs rounded border border-slate-300 px-2.5 py-1.5 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Product code 2</label>
+                        <input type="text" name="product_code_2" value="{{ request('product_code_2') }}" placeholder="Filter Product code 2..."
+                            class="w-full text-xs rounded border border-slate-300 px-2.5 py-1.5 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Brand Name</label>
+                        <input type="text" name="brand_name" value="{{ request('brand_name') }}" placeholder="Filter Brand..."
+                            class="w-full text-xs rounded border border-slate-300 px-2.5 py-1.5 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Model Name</label>
+                        <input type="text" name="model_name" value="{{ request('model_name') }}" placeholder="Filter Model..."
+                            class="w-full text-xs rounded border border-slate-300 px-2.5 py-1.5 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Country of Origin</label>
+                        <input type="text" name="country_of_origin" value="{{ request('country_of_origin') }}" placeholder="Filter Country..."
                             class="w-full text-xs rounded border border-slate-300 px-2.5 py-1.5 focus:ring-1 focus:ring-brand-500 focus:outline-none">
                     </div>
 
@@ -266,35 +294,52 @@
                         <th class="px-2 py-3 text-center whitespace-nowrap">Stat</th>
                         <!-- 9. Qty Unit -->
                         <th class="px-2 py-3 text-center whitespace-nowrap">Qty Unit</th>
-                        <!-- 10. Product code -->
-                        <th class="px-2.5 py-3 whitespace-nowrap">Product code</th>
-                        <!-- 11. En desc -->
+                        <!-- 10. Product code 1 -->
+                        <th class="px-2.5 py-3 whitespace-nowrap">Product code 1</th>
+                        <!-- Agent : Added columns for all remaining customer_clearance_data fields -->
+                        <!-- 11. Product code 2 -->
+                        <th class="px-2.5 py-3 whitespace-nowrap">Product code 2</th>
+                        <!-- 12. En desc -->
                         <th class="px-3 py-3 whitespace-nowrap min-w-[150px]">En desc</th>
-                        <!-- 12. Th desc -->
+                        <!-- 13. Th desc -->
                         <th class="px-3 py-3 whitespace-nowrap min-w-[150px]">Th desc</th>
-                        <!-- 13. File 1 -->
+                        <!-- 14. Brand -->
+                        <th class="px-2.5 py-3 whitespace-nowrap">Brand</th>
+                        <!-- 15. Model -->
+                        <th class="px-2.5 py-3 whitespace-nowrap">Model</th>
+                        <!-- 16. Materials -->
+                        <th class="px-3 py-3 whitespace-nowrap min-w-[120px]">Materials</th>
+                        <!-- 17. Usages -->
+                        <th class="px-3 py-3 whitespace-nowrap min-w-[120px]">Usages</th>
+                        <!-- 18. Functions -->
+                        <th class="px-3 py-3 whitespace-nowrap min-w-[120px]">Functions</th>
+                        <!-- 19. Country -->
+                        <th class="px-2.5 py-3 whitespace-nowrap">Country</th>
+                        <!-- 20. Note -->
+                        <th class="px-3 py-3 whitespace-nowrap min-w-[100px]">Note</th>
+                        <!-- 21. File 1 -->
                         <th class="px-2 py-3 text-center whitespace-nowrap" title="Reference File 1 (Catalog/SDS)">File 1</th>
-                        <!-- 14. File 2 -->
+                        <!-- 22. File 2 -->
                         <th class="px-2 py-3 text-center whitespace-nowrap" title="Reference File 2 (Catalog/SDS)">File 2</th>
-                        <!-- 15. Sign (Pink background #ffdbdb as in backup controller) -->
+                        <!-- 23. Sign (Pink background #ffdbdb as in backup controller) -->
                         <th class="px-2 py-3 text-center whitespace-nowrap text-rose-900 border-x border-rose-200" style="background-color: #ffdbdb;" title="Signed requisition form (hs_evidence_file_1)">
                             Sign
                         </th>
-                        <!-- 16. Email (Pink background #ffdbdb) -->
+                        <!-- 24. Email (Pink background #ffdbdb) -->
                         <th class="px-2 py-3 text-center whitespace-nowrap text-rose-900 border-r border-rose-200" style="background-color: #ffdbdb;" title="Email evidence (hs_evidence_file_2)">
                             Email
                         </th>
-                        <!-- 17. AR (Pink background #ffdbdb) -->
+                        <!-- 25. AR (Pink background #ffdbdb) -->
                         <th class="px-2 py-3 text-center whitespace-nowrap text-rose-900 border-r border-rose-200" style="background-color: #ffdbdb;" title="Advance ruling (hs_evidence_file_3)">
                             AR
                         </th>
-                        <!-- 18. Customs -->
+                        <!-- 26. Customs -->
                         <th class="px-2 py-3 text-center whitespace-nowrap" title="Customs reference (hs_evidence_file_4)">Customs</th>
-                        <!-- 19. Insert -->
+                        <!-- 27. Insert -->
                         <th class="px-2 py-3 text-center whitespace-nowrap">Insert</th>
-                        <!-- 20. Update -->
+                        <!-- 28. Update -->
                         <th class="px-2 py-3 text-center whitespace-nowrap">Update</th>
-                        <!-- 21. Actions -->
+                        <!-- 29. Actions -->
                         <th class="px-3 py-3 text-right whitespace-nowrap">Actions</th>
                     </tr>
                 </thead>
@@ -372,84 +417,173 @@
                                 {{ $item->quantityUnit->unit ?? ($item->quantity_unit_id ?: '-') }}
                             </td>
 
-                            <!-- 10. Product code -->
+                            <!-- 10. Product code 1 -->
                             <td class="px-2.5 py-2 font-mono text-slate-800 whitespace-nowrap" title="{{ $item->product_code_1 }}">
                                 {{ $item->product_code_1 ?: '-' }}
                             </td>
 
-                            <!-- 11. En desc -->
+                            <!-- Agent : Added cells for all remaining customer_clearance_data columns -->
+                            <!-- 11. Product code 2 -->
+                            <td class="px-2.5 py-2 font-mono text-slate-700 whitespace-nowrap" title="{{ $item->product_code_2 }}">
+                                {{ $item->product_code_2 ?: '-' }}
+                            </td>
+
+                            <!-- 12. En desc -->
                             <td class="px-3 py-2 max-w-[200px] truncate text-slate-800" title="{{ $item->product_description_en }}">
                                 {{ $item->product_description_en ?: '-' }}
                             </td>
 
-                            <!-- 12. Th desc -->
+                            <!-- 13. Th desc -->
                             <td class="px-3 py-2 max-w-[200px] truncate text-slate-600" title="{{ $item->product_description_th }}">
                                 {{ $item->product_description_th ?: '-' }}
+                            </td>
+
+                            <!-- 14. Brand -->
+                            <td class="px-2.5 py-2 text-slate-700 whitespace-nowrap" title="{{ $item->brand_name }}">
+                                {{ $item->brand_name ?: '-' }}
+                            </td>
+
+                            <!-- 15. Model -->
+                            <td class="px-2.5 py-2 text-slate-700 whitespace-nowrap" title="{{ $item->model_name }}">
+                                {{ $item->model_name ?: '-' }}
+                            </td>
+
+                            <!-- 16. Materials -->
+                            <td class="px-3 py-2 max-w-[160px] truncate text-slate-600" title="{{ $item->materials }}">
+                                {{ $item->materials ?: '-' }}
+                            </td>
+
+                            <!-- 17. Usages -->
+                            <td class="px-3 py-2 max-w-[160px] truncate text-slate-600" title="{{ $item->usages }}">
+                                {{ $item->usages ?: '-' }}
+                            </td>
+
+                            <!-- 18. Functions -->
+                            <td class="px-3 py-2 max-w-[160px] truncate text-slate-600" title="{{ $item->functions }}">
+                                {{ $item->functions ?: '-' }}
+                            </td>
+
+                            <!-- 19. Country of Origin -->
+                            <td class="px-2.5 py-2 text-slate-700 whitespace-nowrap" title="{{ $item->country_of_origin }}">
+                                {{ $item->country_of_origin ?: '-' }}
+                            </td>
+
+                            <!-- 20. Note -->
+                            <td class="px-3 py-2 max-w-[120px] truncate text-slate-500" title="{{ $item->note }}">
+                                {{ $item->note ?: '-' }}
                             </td>
 
                             <!-- 13. File 1 (Reference 1) -->
                             <td class="px-2 py-2 text-center whitespace-nowrap">
                                 @if(!empty($item->reference_file_1))
-                                    <a href="{{ route('clearance.download', ['id' => $item->id, 'field' => 'reference_file_1']) }}"
-                                        target="_blank" title="Download Reference File 1: {{ basename($item->reference_file_1) }}"
-                                        class="inline-flex items-center text-blue-600 hover:text-blue-800">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                                    </a>
+                                    @if(auth()->user()?->canDownload())
+                                        <a href="{{ route('clearance.download', ['id' => $item->id, 'field' => 'reference_file_1']) }}"
+                                            target="_blank" title="Download Reference File 1: {{ basename($item->reference_file_1) }}"
+                                            class="inline-flex items-center text-blue-600 hover:text-blue-800">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                        </a>
+                                    @else
+                                        <a href="{{ route('clearance.view', ['id' => $item->id, 'field' => 'reference_file_1']) }}"
+                                            target="_blank" title="View Reference File 1: {{ basename($item->reference_file_1) }}"
+                                            class="inline-flex items-center text-sky-600 hover:text-sky-800">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        </a>
+                                    @endif
                                 @endif
                             </td>
 
                             <!-- 14. File 2 (Reference 2) -->
                             <td class="px-2 py-2 text-center whitespace-nowrap">
                                 @if(!empty($item->reference_file_2))
-                                    <a href="{{ route('clearance.download', ['id' => $item->id, 'field' => 'reference_file_2']) }}"
-                                        target="_blank" title="Download Reference File 2: {{ basename($item->reference_file_2) }}"
-                                        class="inline-flex items-center text-blue-600 hover:text-blue-800">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                                    </a>
+                                    @if(auth()->user()?->canDownload())
+                                        <a href="{{ route('clearance.download', ['id' => $item->id, 'field' => 'reference_file_2']) }}"
+                                            target="_blank" title="Download Reference File 2: {{ basename($item->reference_file_2) }}"
+                                            class="inline-flex items-center text-blue-600 hover:text-blue-800">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                        </a>
+                                    @else
+                                        <a href="{{ route('clearance.view', ['id' => $item->id, 'field' => 'reference_file_2']) }}"
+                                            target="_blank" title="View Reference File 2: {{ basename($item->reference_file_2) }}"
+                                            class="inline-flex items-center text-sky-600 hover:text-sky-800">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        </a>
+                                    @endif
                                 @endif
                             </td>
 
                             <!-- 15. Sign (hs_evidence_file_1 with #ffdbdb background) -->
                             <td class="px-2 py-2 text-center whitespace-nowrap border-x border-rose-200" style="background-color: #ffdbdb;">
                                 @if(!empty($item->hs_evidence_file_1))
-                                    <a href="{{ route('clearance.download', ['id' => $item->id, 'field' => 'hs_evidence_file_1']) }}"
-                                        target="_blank" title="Download Signed Req Form: {{ basename($item->hs_evidence_file_1) }}"
-                                        class="inline-flex items-center text-emerald-800 hover:text-emerald-950 font-bold">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                                    </a>
+                                    @if(auth()->user()?->canDownload())
+                                        <a href="{{ route('clearance.download', ['id' => $item->id, 'field' => 'hs_evidence_file_1']) }}"
+                                            target="_blank" title="Download Signed Req Form: {{ basename($item->hs_evidence_file_1) }}"
+                                            class="inline-flex items-center text-emerald-800 hover:text-emerald-950 font-bold">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                        </a>
+                                    @else
+                                        <a href="{{ route('clearance.view', ['id' => $item->id, 'field' => 'hs_evidence_file_1']) }}"
+                                            target="_blank" title="View Signed Req Form: {{ basename($item->hs_evidence_file_1) }}"
+                                            class="inline-flex items-center text-emerald-800 hover:text-emerald-950 font-bold">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        </a>
+                                    @endif
                                 @endif
                             </td>
 
                             <!-- 16. Email (hs_evidence_file_2 with #ffdbdb background) -->
                             <td class="px-2 py-2 text-center whitespace-nowrap border-r border-rose-200" style="background-color: #ffdbdb;">
                                 @if(!empty($item->hs_evidence_file_2))
-                                    <a href="{{ route('clearance.download', ['id' => $item->id, 'field' => 'hs_evidence_file_2']) }}"
-                                        target="_blank" title="Download Email Evidence: {{ basename($item->hs_evidence_file_2) }}"
-                                        class="inline-flex items-center text-emerald-800 hover:text-emerald-950 font-bold">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                                    </a>
+                                    @if(auth()->user()?->canDownload())
+                                        <a href="{{ route('clearance.download', ['id' => $item->id, 'field' => 'hs_evidence_file_2']) }}"
+                                            target="_blank" title="Download Email Evidence: {{ basename($item->hs_evidence_file_2) }}"
+                                            class="inline-flex items-center text-emerald-800 hover:text-emerald-950 font-bold">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                        </a>
+                                    @else
+                                        <a href="{{ route('clearance.view', ['id' => $item->id, 'field' => 'hs_evidence_file_2']) }}"
+                                            target="_blank" title="View Email Evidence: {{ basename($item->hs_evidence_file_2) }}"
+                                            class="inline-flex items-center text-emerald-800 hover:text-emerald-950 font-bold">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        </a>
+                                    @endif
                                 @endif
                             </td>
 
                             <!-- 17. AR (hs_evidence_file_3 with #ffdbdb background) -->
                             <td class="px-2 py-2 text-center whitespace-nowrap border-r border-rose-200" style="background-color: #ffdbdb;">
                                 @if(!empty($item->hs_evidence_file_3))
-                                    <a href="{{ route('clearance.download', ['id' => $item->id, 'field' => 'hs_evidence_file_3']) }}"
-                                        target="_blank" title="Download Advance Ruling: {{ basename($item->hs_evidence_file_3) }}"
-                                        class="inline-flex items-center text-emerald-800 hover:text-emerald-950 font-bold">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                                    </a>
+                                    @if(auth()->user()?->canDownload())
+                                        <a href="{{ route('clearance.download', ['id' => $item->id, 'field' => 'hs_evidence_file_3']) }}"
+                                            target="_blank" title="Download Advance Ruling: {{ basename($item->hs_evidence_file_3) }}"
+                                            class="inline-flex items-center text-emerald-800 hover:text-emerald-950 font-bold">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                        </a>
+                                    @else
+                                        <a href="{{ route('clearance.view', ['id' => $item->id, 'field' => 'hs_evidence_file_3']) }}"
+                                            target="_blank" title="View Advance Ruling: {{ basename($item->hs_evidence_file_3) }}"
+                                            class="inline-flex items-center text-emerald-800 hover:text-emerald-950 font-bold">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        </a>
+                                    @endif
                                 @endif
                             </td>
 
                             <!-- 18. Customs (hs_evidence_file_4) -->
                             <td class="px-2 py-2 text-center whitespace-nowrap">
                                 @if(!empty($item->hs_evidence_file_4))
-                                    <a href="{{ route('clearance.download', ['id' => $item->id, 'field' => 'hs_evidence_file_4']) }}"
-                                        target="_blank" title="Download Customs Ref: {{ basename($item->hs_evidence_file_4) }}"
-                                        class="inline-flex items-center text-blue-600 hover:text-blue-800">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                                    </a>
+                                    @if(auth()->user()?->canDownload())
+                                        <a href="{{ route('clearance.download', ['id' => $item->id, 'field' => 'hs_evidence_file_4']) }}"
+                                            target="_blank" title="Download Customs Ref: {{ basename($item->hs_evidence_file_4) }}"
+                                            class="inline-flex items-center text-blue-600 hover:text-blue-800">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                        </a>
+                                    @else
+                                        <a href="{{ route('clearance.view', ['id' => $item->id, 'field' => 'hs_evidence_file_4']) }}"
+                                            target="_blank" title="View Customs Ref: {{ basename($item->hs_evidence_file_4) }}"
+                                            class="inline-flex items-center text-sky-600 hover:text-sky-800">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        </a>
+                                    @endif
                                 @endif
                             </td>
 
@@ -468,55 +602,62 @@
                                 <a href="{{ route('clearance.show', $item->id) }}" class="text-brand-600 hover:text-brand-900 inline-flex items-center" title="Show Link">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                 </a>
-                                <a href="{{ route('clearance.edit', $item->id) }}" class="text-amber-600 hover:text-amber-800 inline-flex items-center" title="Edit Link">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                </a>
-                                <button @click="uploadModal = true"
-                                    class="text-rose-600 hover:text-rose-800 font-semibold inline-flex items-center border border-rose-200 px-1.5 py-0.5 rounded text-[10px] bg-rose-50 hover:bg-rose-100"
-                                    title="Attach Customs Evidence File">
-                                    + Attach
-                                </button>
+                                <!-- Only render Edit link when the user has explicit canEdit() privileges. -->
+                                @if(auth()->user()?->canEdit())
+                                    <a href="{{ route('clearance.edit', $item->id) }}" class="text-amber-600 hover:text-amber-800 inline-flex items-center" title="Edit Link">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    </a>
+                                @endif
+                                <!-- Standard users and elevated users with write access can attach evidence files. -->
+                                @if(auth()->user()?->canWrite())
+                                    <button @click="uploadModal = true"
+                                        class="text-rose-600 hover:text-rose-800 font-semibold inline-flex items-center border border-rose-200 px-1.5 py-0.5 rounded text-[10px] bg-rose-50 hover:bg-rose-100"
+                                        title="Attach Customs Evidence File">
+                                        + Attach
+                                    </button>
 
-                                <!-- Attach Evidence Modal -->
-                                <div x-show="uploadModal"
-                                    class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4"
-                                    style="display: none;">
-                                    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 text-left"
-                                        @click.outside="uploadModal = false">
-                                        <div class="font-bold text-sm text-slate-900 mb-1">Upload Customs Evidence</div>
-                                        <div class="text-xs text-brand-700 font-mono mb-3">Target Job: {{ $item->job_no }} ({{ $item->customer_name }})</div>
+                                    <!-- Attach Evidence Modal -->
+                                    <div x-show="uploadModal"
+                                        class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4"
+                                        style="display: none;">
+                                        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 text-left"
+                                            @click.outside="uploadModal = false">
+                                            <div class="font-bold text-sm text-slate-900 mb-1">Upload Customs Evidence</div>
+                                            <div class="text-xs text-brand-700 font-mono mb-3">Target Job: {{ $item->job_no }} ({{ $item->customer_name }})</div>
 
-                                        <form method="POST" action="{{ route('compliance.outstanding.attach', $item->id) }}"
-                                            enctype="multipart/form-data" class="space-y-4">
-                                            @csrf
-                                            <div>
-                                                <label class="block text-xs font-semibold text-slate-700 mb-1">Target Evidence Slot</label>
-                                                <select name="evidence_slot" class="w-full text-xs rounded-lg border border-slate-300 p-2 bg-white">
-                                                    <option value="1">Sign - HS Evidence 1 (Signed Requisition Form)</option>
-                                                    <option value="2">Email - HS Evidence 2 (Email Evidence / Correspondence)</option>
-                                                    <option value="3">AR - HS Evidence 3 (Advance Ruling Letter)</option>
-                                                    <option value="4">Customs - HS Evidence 4 (Customs Reference File)</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label class="block text-xs font-semibold text-slate-700 mb-1">File (PDF, Image, Excel)</label>
-                                                <input type="file" name="evidence_file" required
-                                                    class="w-full text-xs border border-slate-300 rounded-lg p-2 bg-slate-50">
-                                            </div>
-                                            <div class="flex justify-end space-x-2 pt-2">
-                                                <button type="button" @click="uploadModal = false"
-                                                    class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
-                                                <button type="submit"
-                                                    class="px-4 py-1.5 text-xs bg-brand-700 hover:bg-brand-800 text-white font-semibold rounded-lg">Upload</button>
-                                            </div>
-                                        </form>
+                                            <form method="POST" action="{{ route('compliance.outstanding.attach', $item->id) }}"
+                                                enctype="multipart/form-data" class="space-y-4">
+                                                @csrf
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Target Evidence Slot</label>
+                                                    <select name="evidence_slot" class="w-full text-xs rounded-lg border border-slate-300 p-2 bg-white">
+                                                        <option value="1">Sign - HS Evidence 1 (Signed Requisition Form)</option>
+                                                        <option value="2">Email - HS Evidence 2 (Email Evidence / Correspondence)</option>
+                                                        <option value="3">AR - HS Evidence 3 (Advance Ruling Letter)</option>
+                                                        <option value="4">Customs - HS Evidence 4 (Customs Reference File)</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-slate-700 mb-1">File (PDF, Image, Excel)</label>
+                                                    <input type="file" name="evidence_file" required
+                                                        class="w-full text-xs border border-slate-300 rounded-lg p-2 bg-slate-50">
+                                                </div>
+                                                <div class="flex justify-end space-x-2 pt-2">
+                                                    <button type="button" @click="uploadModal = false"
+                                                        class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                                                    <button type="submit"
+                                                        class="px-4 py-1.5 text-xs bg-brand-700 hover:bg-brand-800 text-white font-semibold rounded-lg">Upload</button>
+                                                </div>
+                                            </form>
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="21" class="px-4 py-12 text-center text-slate-400">
+                            <!-- Agent : Updated colspan to 29 to match new total column count -->
+                        <td colspan="29" class="px-4 py-12 text-center text-slate-400">
                                 No clearance records found in customer_clearance_data matching the specified criteria.
                             </td>
                         </tr>

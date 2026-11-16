@@ -19,9 +19,15 @@ class ClearanceExcelImportServiceTest extends TestCase
     protected ClearanceExcelImportService $importService;
     protected DocumentStorageService $storageService;
 
+//  Fake S3 and public disks while maintaining S3 bucket configuration to test Excel import archiving in isolation.
     protected function setUp(): void
     {
         parent::setUp();
+        Storage::fake('public');
+        Storage::fake('s3');
+        \Illuminate\Support\Facades\Config::set('filesystems.disks.s3.key', \Illuminate\Support\Facades\Config::get('filesystems.disks.s3.key') ?: 'test-key');
+        \Illuminate\Support\Facades\Config::set('filesystems.disks.s3.bucket', 'sn-ccd-database-system-th');
+        \Illuminate\Support\Facades\Config::set('filesystems.disks.s3.region', 'ap-southeast-7');
         $this->storageService = $this->app->make(DocumentStorageService::class);
         $this->importService = $this->app->make(ClearanceExcelImportService::class);
     }
@@ -77,7 +83,8 @@ class ClearanceExcelImportServiceTest extends TestCase
             $this->assertNotEmpty($history);
             $latest = end($history);
             $this->assertTrue($latest['s3_synced'], 'Excel requisition must be confirmed stored to real AWS S3');
-            $this->assertSame('Bypassed (Cloud-Only)', $latest['local_path']);
+            // Assert 'DISABLED (S3 only)' for local path.
+            $this->assertSame('DISABLED (S3 only)', $latest['local_path']);
             $this->assertStringContainsString('s3://sn-ccd-database-system-th/reference/', $latest['s3_location']);
 
             $s3Disk = Storage::disk('s3');

@@ -87,14 +87,11 @@ class MultiSheetImport implements ToCollection, WithHeadingRow
 
             // Job No
             $rawJobNo = trim((string) ($row['job_no'] ?? ''));
+            $existingRecord = null;
             if (empty($rawJobNo)) {
                 $jobNo = $sequenceAction->execute('CCD');
             } else {
-                if (CustomerClearanceData::where('job_no', $rawJobNo)->exists()) {
-                    throw ValidationException::withMessages([
-                        'multi_record' => "Row {$lineNo}: Duplicate Job No '{$rawJobNo}' already exists.",
-                    ]);
-                }
+                $existingRecord = CustomerClearanceData::where('job_no', $rawJobNo)->first();
                 $jobNo = $rawJobNo;
             }
 
@@ -159,7 +156,7 @@ class MultiSheetImport implements ToCollection, WithHeadingRow
                         ->value('id');
             }
 
-            CustomerClearanceData::create([
+            $attributes = [
                 'job_no' => $jobNo,
                 'master_customer_id' => $customer->id,
                 'customer_name' => $customer->company_name,
@@ -178,7 +175,6 @@ class MultiSheetImport implements ToCollection, WithHeadingRow
                 'sequence_code' => $row['sequence_code_5_digits'] ?? null,
                 'statistic_code_id' => $statId,
                 'quantity_unit_id' => $unitId,
-                // 'quantity_unit'                => !empty($row['quantity_unit_3_digits']) ? mb_substr(trim((string) $row['quantity_unit_3_digits']), 0, 3) : null,
                 'privilege_code' => $row['privilege_code_3_digits'] ?? null,
                 'tariff_ad_valorem' => $row['tariff_rate_ad_valorem_rate'] ?? null,
                 'tariff_specific_rate_unit_id' => $tariffUnitId,
@@ -200,10 +196,16 @@ class MultiSheetImport implements ToCollection, WithHeadingRow
                 'license3_note' => $row['license3_note'] ?? null,
                 'license4_name_id' => $lic4Id,
                 'license4_note' => $row['license4_note'] ?? null,
-                'create_date' => $today,
                 'update_date' => $today,
                 'edit_user_id' => auth()->id() ?? 1,
-            ]);
+            ];
+
+            if ($existingRecord) {
+                $existingRecord->update($attributes);
+            } else {
+                $attributes['create_date'] = $today;
+                CustomerClearanceData::create($attributes);
+            }
 
             $this->importedJobNos[] = $jobNo;
         }

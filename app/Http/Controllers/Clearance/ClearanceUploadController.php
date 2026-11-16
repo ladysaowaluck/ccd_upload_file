@@ -92,7 +92,6 @@ class ClearanceUploadController extends Controller
     // }
 
     // Handle multiple requisitions batch Excel upload with shared reference and evidence attachments.
-
     public function importMulti(BulkExcelUploadRequest $request): RedirectResponse
     {
         if (!$request->hasFile('multi_record')) {
@@ -117,10 +116,6 @@ class ClearanceUploadController extends Controller
             $count = count($jobNos);
             $attachmentCount = count(array_filter($attachedFiles));
 
-            /*
-            echo 'DEBUG::Successfully imported CCD records in batch mode. ';
-            return redirect()->route('clearance.index')->with('success', "Successfully imported {$count} CCD records in batch mode.");
-            */
             $cloudNote = '';
             if ($this->storageService->isCloudConfigured() && $attachmentCount > 0) {
                 $cloudNote = " with {$attachmentCount} shared attachment(s) backed up to AWS S3 ({$this->storageService->getCloudBucket()})";

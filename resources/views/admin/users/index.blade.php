@@ -1,4 +1,4 @@
-{{-- GAP-08 — Admin User Management Directory Index View --}}
+<!-- Admin User Management Directory Index View -->
 @extends('layouts.app')
 
 @section('header_title', 'User & Role Administration')

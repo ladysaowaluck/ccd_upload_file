@@ -8,14 +8,13 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
-// Gemini : Feature tests for web session authentication matching present process
+//  Feature tests for web session authentication matching present process
 class AuthenticationTest extends TestCase
 {
     use DatabaseTransactions;
 
-    /**
-     * Test that login screen can be rendered.
-     */
+    // Test that login screen can be rendered.
+    
     public function test_login_screen_can_be_rendered(): void
     {
         $response = $this->get('/login');
@@ -25,9 +24,8 @@ class AuthenticationTest extends TestCase
         $response->assertSee('Corporate Email');
     }
 
-    /**
-     * Test that verified users can authenticate using corporate email and redirect to clearance.
-     */
+    // Test that verified users can authenticate using corporate email and redirect to clearance.
+    
     public function test_verified_user_can_authenticate_using_corporate_email(): void
     {
         $password = 'Correct@1234';
@@ -48,9 +46,8 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect('/clearance');
     }
 
-    /**
-     * Test that user can authenticate using username as well.
-     */
+    // Test that user can authenticate using username as well.
+    
     public function test_verified_user_can_authenticate_using_username(): void
     {
         $password = 'Correct@1234';
@@ -71,9 +68,7 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect('/clearance');
     }
 
-    /**
-     * Test that users cannot authenticate with invalid password.
-     */
+    // Test that users cannot authenticate with invalid password.
     public function test_users_cannot_authenticate_with_invalid_password(): void
     {
         $user = AdminUser::create([
@@ -93,9 +88,8 @@ class AuthenticationTest extends TestCase
         $response->assertSessionHasErrors('username');
     }
 
-    /**
-     * Test that authenticated users can log out.
-     */
+    // Test that authenticated users can log out.
+    
     public function test_user_can_logout(): void
     {
         $user = AdminUser::create([

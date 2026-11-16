@@ -71,7 +71,6 @@ class DocumentStorageService
             }
         }
 
-        // Gemini : Commented out - local Linux server (/mnt/efs) upload disabled. S3 is the sole upload target.
         // $serverLocation = "{$this->serverStoragePath}/{$directory}/{$fileName}";
         // if (is_dir($this->serverStoragePath)) {
         //     try {
@@ -209,7 +208,6 @@ class DocumentStorageService
         ];
         */
 
-        // Gemini : Commented out - local server path removed. Returns S3-only locations.
         // $serverPath = is_dir($this->serverStoragePath)
         //     ? "{$this->serverStoragePath}/{$cleanPath}"
         //     : "/mnt/efs/{$cleanPath}";
@@ -271,11 +269,14 @@ class DocumentStorageService
                 'message' => "Successfully connected to AWS S3 bucket [{$bucket}] ({$region})",
             ];
         } catch (\Throwable $e) {
+            // s Capture detailed underlying exception message for S3 diagnostic
+            $prev = $e->getPrevious();
+            $detail = $prev ? ' | Detail: ' . $prev->getMessage() : '';
             return [
                 'connected' => false,
                 'bucket' => $this->getCloudBucket(),
                 'region' => $this->getCloudRegion(),
-                'message' => 'AWS S3 Connection Error: ' . $e->getMessage(),
+                'message' => 'AWS S3 Connection Error: ' . $e->getMessage() . $detail,
             ];
         }
     }
@@ -328,7 +329,6 @@ class DocumentStorageService
         $cleanPath = ltrim($path, '/');
         $deleted = false;
 
-        // Gemini : Commented out - local Linux server (/mnt/efs) deletion disabled. S3 only.
         // $serverFile = "{$this->serverStoragePath}/{$cleanPath}";
         // if (file_exists($serverFile)) {
         //     $deleted = @unlink($serverFile) || $deleted;
@@ -354,13 +354,22 @@ class DocumentStorageService
         return $deleted;
     }
 
+    // Generate a temporary pre-signed S3 URL for inline browser viewing (opens PDF/images in tab).
+    public function getTemporaryUrl(string $path, int $minutesExpiry = 5): ?string
+    {
+        $cleanPath = ltrim($path, '/');
+        if ($this->isCloudConfigured() && Storage::disk($this->cloudDisk)->fileExists($cleanPath)) {
+            return Storage::disk($this->cloudDisk)->temporaryUrl($cleanPath, now()->addMinutes($minutesExpiry));
+        }
+        return null;
+    }
+
     // Stream and download document file directly from AWS S3 bucket.
     public function download(string $relativePath, ?string $downloadName = null)
     {
         $cleanPath = ltrim($relativePath, '/');
         $fileName = $downloadName ?? basename($cleanPath);
 
-        // Gemini : Commented out - local Linux server (/mnt/efs) download disabled. S3 is primary source.
         // $serverFile = "{$this->serverStoragePath}/{$cleanPath}";
         // if (file_exists($serverFile) && is_readable($serverFile)) {
         //     return response()->download($serverFile, $fileName);

@@ -91,6 +91,27 @@ class GetOutstandingClearanceQuery
             $query->where('product_code_1', 'LIKE', '%' . trim((string) $filters['product_code_1']) . '%');
         }
 
+        // Agent : Added product_code_2, brand_name, model_name, country_of_origin filters
+        // 8b. Product Code 2 filter
+        if (!empty($filters['product_code_2'])) {
+            $query->where('product_code_2', 'LIKE', '%' . trim((string) $filters['product_code_2']) . '%');
+        }
+
+        // 8c. Brand Name filter
+        if (!empty($filters['brand_name'])) {
+            $query->where('brand_name', 'LIKE', '%' . trim((string) $filters['brand_name']) . '%');
+        }
+
+        // 8d. Model Name filter
+        if (!empty($filters['model_name'])) {
+            $query->where('model_name', 'LIKE', '%' . trim((string) $filters['model_name']) . '%');
+        }
+
+        // 8e. Country of Origin filter
+        if (!empty($filters['country_of_origin'])) {
+            $query->where('country_of_origin', 'LIKE', '%' . trim((string) $filters['country_of_origin']) . '%');
+        }
+
         // 9. Product Description En filter
         if (!empty($filters['product_description_en'])) {
             $query->where('product_description_en', 'LIKE', '%' . trim((string) $filters['product_description_en']) . '%');

@@ -5,6 +5,7 @@ namespace App\Domain\Clearance\Services;
 use App\Imports\MultiSheetImport;
 use App\Imports\SingleSheetImport;
 use App\Models\Business\CustomerClearanceData;
+use App\Services\Excel\PurePhpExcelReader;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
@@ -14,8 +15,10 @@ class ClearanceExcelImportService
 {
     // DocumentStorageService
     public function __construct(
-        protected DocumentStorageService $storageService
+        protected DocumentStorageService $storageService,
+        protected ?PurePhpExcelReader $excelReader = null
     ) {
+        $this->excelReader = $excelReader ?? new PurePhpExcelReader();
     }
 
     /**
@@ -29,10 +32,32 @@ class ClearanceExcelImportService
 
     public function importSingle(UploadedFile $file, array $attachedFiles = [], ?string $impExp = null): string
     {
-        $import = new SingleSheetImport();
-        Excel::import($import, $file);
+        // Lady : Maatwebsite Excel and PhpSpreadsheet depend on PHP ext-zip / ZipArchive which is not available in this environment.
+        // $import = new SingleSheetImport();
+        // Excel::import($import, $file);
+        // $jobNo = $import->importedJobNo ?? session()->get('single_job_no');
 
-        $jobNo = $import->importedJobNo ?? session()->get('single_job_no');
+        // Use PurePhpExcelReader to parse Excel requisition without ZipArchive dependencies.
+        $jobNo = null;
+        $realPath = $file->getRealPath();
+        if ($realPath && file_exists($realPath) && filesize($realPath) > 0) {
+            $cells = $this->excelReader->readCells($realPath);
+            if (!empty($cells)) {
+                $import = new SingleSheetImport();
+                $mapping = $import->mapping();
+                $mappedRow = [];
+                foreach ($mapping as $key => $coord) {
+                    $mappedRow[$key] = $cells[$coord] ?? null;
+                }
+                $model = $import->model($mappedRow);
+                if ($model && !$model->exists) {
+                    $model->save();
+                }
+                $jobNo = $import->importedJobNo ?? ($model ? $model->job_no : null);
+            }
+        }
+
+        $jobNo = $jobNo ?? session()->get('single_job_no');
 
         if (!$jobNo) {
             throw new \RuntimeException('Failed to determine Job Number from imported requisition.');
@@ -70,11 +95,24 @@ class ClearanceExcelImportService
      */
     public function importMulti(UploadedFile $file, array $attachedFiles = []): array
     {
-        $import = new MultiSheetImport();
-        Excel::import($import, $file);
+        // $import = new MultiSheetImport();
+        // Excel::import($import, $file);
+        // $jobNos = !empty($import->importedJobNos) ? $import->importedJobNos : session()->get('multi_job_no', []);
 
-        // $jobNos = $import->importedJobNos ?? session()->get('multi_job_no', []);
-        $jobNos = !empty($import->importedJobNos) ? $import->importedJobNos : session()->get('multi_job_no', []);
+        $jobNos = [];
+        $realPath = $file->getRealPath();
+        if ($realPath && file_exists($realPath) && filesize($realPath) > 0) {
+            $rows = $this->excelReader->readRowsWithHeading($realPath, 1);
+            if ($rows->isNotEmpty()) {
+                $import = new MultiSheetImport();
+                $import->collection($rows);
+                $jobNos = $import->importedJobNos;
+            }
+        }
+
+        if (empty($jobNos)) {
+            $jobNos = session()->get('multi_job_no', []);
+        }
 
         foreach ($jobNos as $jobNo) {
             $this->attachFilesToJob($jobNo, $attachedFiles);

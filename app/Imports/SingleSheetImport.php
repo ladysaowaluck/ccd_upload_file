@@ -15,19 +15,9 @@ use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithMappedCells;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
-// Implement WithMultipleSheets so that single-sheet requisition import targets only the primary data sheet (index 0), ignoring master/lookup sheets
-class SingleSheetImport implements WithMappedCells, ToModel, WithMultipleSheets
+class SingleSheetImport implements WithMappedCells, ToModel
 {
     public ?string $importedJobNo = null;
-
-    // Only process sheet at index 0 for single requisition import.
-
-    public function sheets(): array
-    {
-        return [
-            0 => $this,
-        ];
-    }
 
     public function mapping(): array
     {

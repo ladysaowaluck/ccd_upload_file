@@ -772,7 +772,8 @@ class ClearanceSystemTest extends TestCase
         $this->assertIsArray($debug);
         $this->assertNotEmpty($debug);
         $this->assertArrayHasKey('local_path', $debug[0]);
-        $this->assertSame('Bypassed (Cloud-Only)', $debug[0]['local_path']);
+        // Align assertion with DocumentStorageService disabled local server status string
+        $this->assertSame('DISABLED (S3 only)', $debug[0]['local_path']);
         $this->assertStringContainsString('s3://sn-ccd-database-system-th', $debug[0]['s3_location']);
 
         $s3Disk = \Illuminate\Support\Facades\Storage::disk('s3');

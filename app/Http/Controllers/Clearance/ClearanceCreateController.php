@@ -37,9 +37,10 @@ class ClearanceCreateController extends Controller
         $customers = MasterCustomer::where('is_enable', 0)->orderBy('company_name')->get();
         $units = MasterUnit::orderBy('unit')->get();
         $statistics = MasterStatistic::orderBy('statistics')->get();
+        $licenses = \App\Models\Business\MasterLicense::orderBy('license_en')->get();
         $suggestedJobNo = $this->sequenceService->getNextJobNo('CCD');
 
-        return view('clearance.create', compact('branches', 'customers', 'units', 'statistics', 'suggestedJobNo'));
+        return view('clearance.create', compact('branches', 'customers', 'units', 'statistics', 'licenses', 'suggestedJobNo'));
     }
 
     /*
