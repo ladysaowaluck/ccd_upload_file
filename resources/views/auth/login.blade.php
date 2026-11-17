@@ -4,6 +4,7 @@
 
 @section('content')
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+        <img src="{{ asset('images/SNC LOGO.png') }}" alt="Logo" class="w-21 h-auto mx-auto mb-6">
         <div class="text-center mb-6">
             <h2 class="text-xl font-bold text-slate-900">Sign In</h2>
             <p class="text-xs text-slate-500 mt-1">Access customs clearance database and compliance audits</p>

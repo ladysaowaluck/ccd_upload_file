@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+    
     <div class="text-center mb-6">
         <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
             <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

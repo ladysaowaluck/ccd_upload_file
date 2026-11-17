@@ -32,7 +32,6 @@ class ClearanceExcelImportService
 
     public function importSingle(UploadedFile $file, array $attachedFiles = [], ?string $impExp = null): string
     {
-        // Lady : Maatwebsite Excel and PhpSpreadsheet depend on PHP ext-zip / ZipArchive which is not available in this environment.
         // $import = new SingleSheetImport();
         // Excel::import($import, $file);
         // $jobNo = $import->importedJobNo ?? session()->get('single_job_no');

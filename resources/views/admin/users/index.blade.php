@@ -28,13 +28,14 @@
                     <label class="block text-xs font-medium text-slate-600 mb-1">Search User</label>
                     <input type="text" name="search" value="{{ request('search') }}"
                         placeholder="Username, name, or corporate email..."
-                        class="w-full text-sm rounded-lg border-slate-300 focus:ring-brand-500 focus:border-brand-500">
+                        class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
                 </div>
 
                 <div>
                     <label class="block text-xs font-medium text-slate-600 mb-1">Filter by Role</label>
                     <select name="role"
-                        class="w-full text-sm rounded-lg border-slate-300 focus:ring-brand-500 focus:border-brand-500">
+                        class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        
                         <option value="">All Roles</option>
                         @foreach ($roles as $r)
                             <option value="{{ $r->slug }}" {{ request('role') == $r->slug ? 'selected' : '' }}>

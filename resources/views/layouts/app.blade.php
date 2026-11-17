@@ -9,26 +9,93 @@
     <link rel="icon" type="image/png" href="{{ asset('images/letter-n.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('images/letter-n.png') }}">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <!-- Tailwind CSS CDN Fallback for Zero-Build Immediate High-Performance Rendering -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        brand: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
                     colors: {
+                        /* Unified enterprise theme anchored to user-requested corporate palette:
+                                  - #0070C0 : Corporate SNC Blue (brand-600)
+                                  - #FA7800 : Vibrant Operations / Cargo Orange (cargo-500)
+                                  - #F59E0B : Warm Amber / Attention Warning (amber-500)
+                                  - #8B0019 : Nissin Deep Crimson Burgundy (nissin-700 / rose-700)
+                                  - #B90019 : Nissin Vivid Crimson Red (nissin-600 / rose-600)
+                        */
                         brand: {
-                            50: '#eef8ff',
-                            100: '#d8eeff',
-                            200: '#b9e0ff',
-                            300: '#89ceff',
-                            400: '#52b2ff',
-                            500: '#2b91ff',
-                            600: '#1471f5',
-                            700: '#0d59e1',
-                            800: '#1147b6',
-                            900: '#133e8f',
-                            950: '#0b2456',
-                        }
+                            50: '#edf6fd',
+                            100: '#d5ebfa',
+                            200: '#b0d9f6',
+                            300: '#77c0ef',
+                            400: '#38a3e6',
+                            500: '#0f87d4',
+                            600: '#0070C0', // SNC Corporate Blue (Primary)
+                            700: '#005a9c', // Primary button & active nav state
+                            800: '#004c82', // Darker interactive hover state
+                            900: '#053f6b',
+                            950: '#032642',
+                        },
+                        nissin: {
+                            50: '#fdf2f3',
+                            100: '#fbe6e8',
+                            200: '#f7cfd3',
+                            300: '#f0abb2',
+                            400: '#e57a85',
+                            500: '#d74756',
+                            600: '#B90019', // Vivid Crimson
+                            700: '#8B0019', // Deep Burgundy / Nissin Signature Red
+                            800: '#730416',
+                            900: '#5c0615',
+                            950: '#350109',
+                        },
+                        cargo: {
+                            50: '#fff7ed',
+                            100: '#ffeed6',
+                            200: '#fed7aa',
+                            300: '#fdbb72',
+                            400: '#fb9732',
+                            500: '#FA7800', // Vibrant Operations Orange
+                            600: '#df6400',
+                            700: '#b94c00',
+                            800: '#943d05',
+                            900: '#78330a',
+                            950: '#431702',
+                        },
+                        rose: {
+                            50: '#fdf2f3',
+                            100: '#fbe6e8',
+                            200: '#f7cfd3',
+                            300: '#f0abb2',
+                            400: '#e57a85',
+                            500: '#d74756',
+                            600: '#B90019', // Vivid Crimson for missing evidence & error alerts
+                            700: '#8B0019', // Deep Burgundy Crimson
+                            800: '#730416',
+                            900: '#5c0615',
+                            950: '#350109',
+                        },
+                        amber: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#F59E0B', // Warm Attention Amber
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                            950: '#451a03',
+                        },
                     }
                 }
             }
@@ -45,14 +112,29 @@
         <aside
             class="w-full lg:w-64 lg:sticky lg:top-0 lg:h-screen lg:self-start bg-slate-900 border-r border-slate-800 text-slate-300 flex-shrink-0 flex flex-col z-30">
             <div
-                class="h-16 flex items-center justify-between px-6 bg-slate-950 font-bold tracking-wide text-white border-b border-slate-800 ">
-                <!-- //sticky top-0 z-20 -->
-                <a href="{{ route('clearance.index') }}" class="flex items-center space-x-2">
-                    <!-- <span class="inline-block w-3 h-3 bg-blue-500 rounded-sm"></span> -->
+                class="h-16 flex items-center justify-between px-5 bg-slate-950 text-white border-b border-slate-800/80">
+                <a href="{{ route('clearance.index') }}" class="flex items-center gap-3 group transition">
                     <img src="{{ asset('images/Logo Nissin-1.png') }}" alt="SNC Logo"
-                        class="h-8 w-auto object-contain flex-shrink-0">
+                        class="h-8 w-auto object-contain flex-shrink-0 group-hover:brightness-110 transition">
 
+                    {{--
                     <span class="text-white tracking-wider text-sm font-semibold">CCD SYSTEM</span>
+                    --}}
+
+                    <div class="flex flex-col min-w-0">
+                        <div class="flex items-center gap-1.5 leading-none">
+                            <span class="text-[15px] font-extrabold tracking-tight text-white font-brand group-hover:text-brand-300 transition-colors">
+                                CCD
+                            </span>
+                            <span class="text-[10px] font-extrabold tracking-widest uppercase px-1.5 py-0.5 rounded bg-cargo-950/90 text-cargo-400 border border-cargo-600/50 shadow-sm leading-none">
+                                SYSTEM
+                            </span>
+                        </div>
+                        <!-- <span class="text-[9px] font-semibold uppercase tracking-wider text-slate-400 mt-1 leading-none flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-nissin-600 inline-block shadow-xs"></span>
+                            Customs Clearance
+                        </span> -->
+                    </div>
                 </a>
             </div>
 
