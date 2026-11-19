@@ -88,18 +88,26 @@ class ClearanceCreateController extends Controller
         return redirect()->route('clearance.index')->with('success', "Clearance record {$validated['job_no']} created successfully.");
     }
     */
+    // Wrap store() in defensive try-catch to return user-friendly error instead of unhandled 500
     public function store(\App\Http\Requests\StoreClearanceRecordRequest $request): RedirectResponse
     {
-        $payload = array_merge($request->validated(), $request->allFiles());
-        $record = $this->createAction->execute($payload);
+        try {
+            $payload = array_merge($request->validated(), $request->allFiles());
+            $record = $this->createAction->execute($payload);
 
-        $uploadHistory = $this->storageService->getUploadHistory();
-        $redirect = redirect()->route('clearance.index')->with('success', "Clearance record {$record->job_no} created successfully.");
-        if (!empty($uploadHistory)) {
-            $redirect->with('upload_debug', $uploadHistory);
+            $uploadHistory = $this->storageService->getUploadHistory();
+            $redirect = redirect()->route('clearance.index')->with('success', "Clearance record {$record->job_no} created successfully.");
+            if (!empty($uploadHistory)) {
+                $redirect->with('upload_debug', $uploadHistory);
+            }
+
+            return $redirect;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("ClearanceCreateController: Record creation failed: " . $e->getMessage(), [
+                'exception' => $e,
+            ]);
+            return back()->withInput()->with('error', 'Failed to create clearance record: ' . $e->getMessage());
         }
-
-        return $redirect;
     }
 }
 

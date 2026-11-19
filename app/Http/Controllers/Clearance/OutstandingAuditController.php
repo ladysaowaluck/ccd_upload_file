@@ -72,30 +72,92 @@ class OutstandingAuditController extends Controller
         return view('clearance.outstanding', compact('records', 'filters', 'branches', 'statistics'));
     }
 
+    // Universal document & evidence attachment method. Supports uploading BOTH Reference Files
+    // (Catalog, Specification, SDS 1 & 2) and HS Compliance Evidence (Slots 1 to 4) directly from the audit grid.
     public function attachEvidence(Request $request, int $id, \App\Services\Storage\DocumentStorageService $storageService): RedirectResponse
     {
         $record = CustomerClearanceData::findOrFail($id);
 
+        // Check PHP-level upload errors BEFORE validation.
+        // 1. If entire POST payload exceeds post_max_size, PHP discards both $_POST and $_FILES.
+        if (empty($_FILES) && empty($_POST) && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+            $postLimit = ini_get('post_max_size');
+            return back()->withErrors([
+                'evidence_file' => "The uploaded file and form data exceeded the server's post_max_size limit ({$postLimit}).",
+            ]);
+        }
+
+        // 2. When a single file exceeds php.ini upload_max_filesize, PHP sets UPLOAD_ERR_INI_SIZE.
+        $phpUploadError = $_FILES['evidence_file']['error'] ?? $_FILES['document_file']['error'] ?? UPLOAD_ERR_OK;
+        if ($phpUploadError === UPLOAD_ERR_INI_SIZE || $phpUploadError === UPLOAD_ERR_FORM_SIZE) {
+            $serverLimit = ini_get('upload_max_filesize');
+            return back()->withErrors([
+                'evidence_file' => "The file is too large for the server. Server upload limit is {$serverLimit}. Please reduce the file size or increase server limits.",
+            ]);
+        }
+        if ($phpUploadError !== UPLOAD_ERR_OK && $phpUploadError !== UPLOAD_ERR_NO_FILE) {
+            return back()->withErrors([
+                'evidence_file' => "Upload failed at PHP layer with error code {$phpUploadError}.",
+            ]);
+        }
+
         $request->validate([
-            'evidence_slot' => 'required|in:1,2,3,4',
-            'evidence_file' => 'required|file|max:20480|mimes:pdf,xlsx,xls,doc,docx,jpg,jpeg,png',
+            'evidence_slot' => 'nullable|string|in:1,2,3,4,ref1,ref2,reference_1,reference_2,evidence_1,evidence_2,evidence_3,evidence_4',
+            'document_slot' => 'nullable|string|in:1,2,3,4,ref1,ref2,reference_1,reference_2,evidence_1,evidence_2,evidence_3,evidence_4',
+            'evidence_file' => 'nullable|file|max:20480|mimes:pdf,xlsx,xls,doc,docx,jpg,jpeg,png',
+            'document_file' => 'nullable|file|max:20480|mimes:pdf,xlsx,xls,doc,docx,jpg,jpeg,png',
         ]);
 
-        $slot = (int) $request->input('evidence_slot');
-        $file = $request->file('evidence_file');
+        $slot = (string) ($request->input('document_slot') ?? $request->input('evidence_slot', '1'));
+        $file = $request->file('document_file') ?? $request->file('evidence_file');
+
+        if (!$file) {
+            return back()->withErrors(['evidence_file' => 'Please select a file to upload.']);
+        }
 
         $cleanOriginal = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $file->getClientOriginalName());
-        $filename = "{$record->job_no}_hs{$slot}_{$cleanOriginal}";
-        $path = $storageService->store($file, 'hs_evidence', $filename);
 
-        $field = "hs_evidence_file_{$slot}";
-        $record->{$field} = $path;
-        $record->update_date = date('Y-m-d');
-        $record->save();
+        // Wrap store+save in try-catch so an S3 PutObject failure (403/5xx) returns
+        // a user-friendly validation error instead of an unhandled 500 response.
+        try {
+            // Determine destination: Reference File vs HS Evidence File
+            if (in_array($slot, ['ref1', 'reference_1'], true)) {
+                $field = 'reference_file_1';
+                $filename = "{$record->job_no}_ref1_{$cleanOriginal}";
+                $path = $storageService->store($file, 'reference', $filename);
+                $successMsg = "Reference Document (Catalog/SDS 1) attached successfully for Job {$record->job_no}";
+            } elseif (in_array($slot, ['ref2', 'reference_2'], true)) {
+                $field = 'reference_file_2';
+                $filename = "{$record->job_no}_ref2_{$cleanOriginal}";
+                $path = $storageService->store($file, 'reference', $filename);
+                $successMsg = "Reference Document (Catalog/SDS 2) attached successfully for Job {$record->job_no}";
+            } else {
+                // Standard HS Evidence (1..4 or evidence_1..4)
+                $numericSlot = (int) str_replace('evidence_', '', $slot);
+                if ($numericSlot < 1 || $numericSlot > 4) {
+                    $numericSlot = 1;
+                }
+                $field = "hs_evidence_file_{$numericSlot}";
+                $filename = "{$record->job_no}_hs{$numericSlot}_{$cleanOriginal}";
+                $path = $storageService->store($file, 'hs_evidence', $filename);
+                $successMsg = "Evidence attached successfully to slot {$numericSlot} for Job {$record->job_no}";
+            }
 
-        $cloudNote = $storageService->isCloudConfigured() ? ' (backed up to AWS S3)' : '';
+            if (!$path) {
+                return back()->withErrors(['evidence_file' => 'File could not be stored. Please try again.']);
+            }
+
+            $record->{$field} = $path;
+            $record->update_date = date('Y-m-d');
+            $record->save();
+        } catch (\Throwable $e) {
+            Log::error("OutstandingAuditController: attachEvidence failed for record [{$record->job_no}]: " . $e->getMessage());
+            return back()->withErrors(['evidence_file' => 'File upload failed. Please try again later.']);
+        }
+
+        $cloudNote = $storageService->isCloudConfigured() ? ' ' : '';
         $uploadHistory = $storageService->getUploadHistory();
-        $redirect = back()->with('success', "Evidence attached successfully to slot {$slot} for Job {$record->job_no}{$cloudNote}.");
+        $redirect = back()->with('success', "{$successMsg}{$cloudNote}.");
         if (!empty($uploadHistory)) {
             $redirect->with('upload_debug', $uploadHistory);
         }

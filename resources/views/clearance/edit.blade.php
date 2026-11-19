@@ -5,6 +5,70 @@
 
 @section('content')
 
+   <!-- Flash notifications for updates and file deletions -->
+     <!-- In-page notification banner with padding showing up-to-date status after record update -->
+    @if(session('success'))
+        <div class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs shadow-sm flex items-start justify-between gap-3 animate-in fade-in duration-150">
+            <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 mt-0.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="font-bold text-emerald-900 text-xs flex items-center gap-2">
+                        <span>Record Updated: Up to Date</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-200 text-emerald-800">Up to Date</span>
+                    </div>
+                    <div class="text-xs text-emerald-800 mt-0.5 leading-relaxed">{{ session('success') }}</div>
+                    <!-- @if(session('upload_debug') && is_array(session('upload_debug')))
+                        <div class="mt-2 p-2 rounded-lg bg-white/80 border border-emerald-200/80 text-[11px] font-mono text-emerald-900 space-y-1">
+                            @foreach(session('upload_debug') as $dbg)
+                                <div class="flex items-center gap-2">
+                                    <span class="font-semibold">{{ $dbg['file_name'] ?? 'Uploaded File' }}</span>
+                                    <span class="text-emerald-700">({{ number_format(($dbg['size_bytes'] ?? 0) / 1024, 1) }} KB)</span>
+                                    @if(!empty($dbg['s3_synced']))
+                                        <span class="text-[10px] text-emerald-600">• S3 Synced</span>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif -->
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('clearance.show', $record->id) }}" class="inline-flex items-center text-xs font-semibold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-2.5 py-1 rounded-lg transition" title="View details in show mode">
+                    View Record
+                </a>
+                <button type="button" onclick="this.parentElement.parentElement.remove()" class="text-emerald-600 hover:text-emerald-800 p-1 rounded transition" title="Dismiss">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs shadow-sm flex items-start justify-between gap-3 animate-in fade-in duration-150">
+            <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center text-rose-700 mt-0.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="font-bold text-rose-900 text-xs">Error</div>
+                    <div class="text-xs text-rose-800 mt-0.5 leading-relaxed">{{ session('error') }}</div>
+                </div>
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" class="text-rose-600 hover:text-rose-800 p-1 rounded transition" title="Dismiss">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+    @endif
+
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
         <form method="POST" action="{{ route('clearance.update', $record->id) }}" enctype="multipart/form-data"
             class="space-y-8">
@@ -271,8 +335,8 @@
                         <label class="w-52 shrink-0 text-xs font-semibold text-slate-700">Tariff Rate (Specific)
                             Unit</label>
                         <div class="flex-1">
-                            <input type="text" name="tariff_specific_rate_unit"
-                                value="{{ old('tariff_specific_rate_unit', $record->tariff_specific_rate_unit) }}"
+                            <input type="text" name="tariff_specific_rate_unit_id"
+                                value="{{ old('tariff_specific_rate_unit_id', $record->tariff_specific_rate_unit_id) }}"
                                 placeholder="e.g. KGM"
                                 class="w-full text-xs font-mono rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
                         </div>
@@ -438,94 +502,221 @@
             @endforeach
 
             <!-- Section: Reference Files -->
+            @php
+                $referenceSlots = [
+                    ['field' => 'reference_file_1', 'label' => 'Catalog, SDS etc. 1'],
+                    ['field' => 'reference_file_2', 'label' => 'Catalog, SDS etc. 2'],
+                ];
+            @endphp
             <div>
                 <h3 class="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-4">Reference Files</h3>
-                <div class="space-y-3">
+                <div class="space-y-4">
+                    @foreach($referenceSlots as $slot)
+                        @php
+                            $fieldName = $slot['field'];
+                            $filePath = $record->{$fieldName};
+                        @endphp
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/70 space-y-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-800">{{ $slot['label'] }}</span>
+                                    @if($filePath)
+                                        <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                            Attached
+                                        </span>
+                                    @else
+                                        <span class="text-[10px] text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                            Not attached
+                                        </span>
+                                    @endif
+                                </div>
 
-                    @foreach([1, 2] as $rn)
-                        <div class="flex items-center gap-4">
-                            <label class="w-52 shrink-0 text-xs font-semibold text-slate-700">
-                                Catalog, SDS etc. {{ $rn }}
-                                @if($record->{'reference_file_' . $rn})
-                                    <span
-                                        class="ml-1 text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Exists</span>
+                                @if($filePath)
+                                    <div class="flex items-center gap-3 text-xs">
+                                        <a href="{{ route('clearance.view', ['id' => $record->id, 'field' => $fieldName]) }}"
+                                            target="_blank"
+                                            class="inline-flex items-center text-sky-600 hover:text-sky-800 font-semibold transition"
+                                            title="View file in browser">
+                                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                            View
+                                        </a>
+                                        <!-- Download removed — View (pre-signed S3 URL) works in production;
+                                             download routes through server which is blocked by S3 IAM policy.  -->
+                                        <!-- @if(auth()->user()?->canDownload())
+                                            <a href="{{ route('clearance.download', ['id' => $record->id, 'field' => $fieldName]) }}"
+                                                class="inline-flex items-center text-brand-600 hover:text-brand-800 font-semibold transition"
+                                                title="Download file">
+                                                Download
+                                            </a>
+                                        @endif  -->
+                                        <button type="button"
+                                            onclick="confirmDeleteSingleFile('{{ $record->id }}', '{{ $fieldName }}', '{{ addslashes(basename($filePath)) }}')"
+                                            class="inline-flex items-center text-rose-600 hover:text-rose-800 font-semibold transition"
+                                            title="Delete file permanently">
+                                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Delete File
+                                        </button>
+                                    </div>
                                 @endif
-                            </label>
-                            <div class="flex-1">
-                                <input type="file" name="reference_file_{{ $rn }}" class="w-full text-xs">
+                            </div>
+
+                            @if($filePath)
+                                <div class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 text-xs font-mono text-slate-700">
+                                    <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span class="truncate flex-1 select-all" title="{{ basename($filePath) }}">{{ basename($filePath) }}</span>
+                                </div>
+                            @endif
+
+                            <div>
+                                <label class="block text-[11px] text-slate-500 mb-1">
+                                    {{ $filePath ? 'Upload replacement file (optional):' : 'Choose file to attach:' }}
+                                </label>
+                                <input type="file" name="{{ $fieldName }}"
+                                    accept=".pdf,.xlsx,.xls,.doc,.docx,.jpg,.jpeg,.png"
+                                    class="w-full text-xs text-slate-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300">
                             </div>
                         </div>
                     @endforeach
-
                 </div>
             </div>
 
             <!-- Section: HS Evidence -->
+            @php
+                $evidenceSlots = [
+                    ['field' => 'hs_evidence_file_1', 'label' => 'Signed Requisition Form', 'required_slot' => true],
+                    ['field' => 'hs_evidence_file_2', 'label' => 'Email Evidence', 'required_slot' => false],
+                    ['field' => 'hs_evidence_file_3', 'label' => 'Advance Ruling', 'required_slot' => false],
+                    ['field' => 'hs_evidence_file_4', 'label' => 'Customs Reference', 'required_slot' => false],
+                ];
+            @endphp
             <div>
                 <h3 class="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-4">HS Evidence</h3>
-                <div class="space-y-3">
+                <div class="space-y-4">
+                    @foreach($evidenceSlots as $slot)
+                        @php
+                            $fieldName = $slot['field'];
+                            $filePath = $record->{$fieldName};
+                        @endphp
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/70 space-y-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-800">{{ $slot['label'] }}</span>
+                                    @if($filePath)
+                                        <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                            Attached
+                                        </span>
+                                    @elseif($slot['required_slot'])
+                                        <span class="text-[10px] text-rose-600 font-semibold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                                            Missing
+                                        </span>
+                                    @else
+                                        <span class="text-[10px] text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                            Not attached
+                                        </span>
+                                    @endif
+                                </div>
 
-                    @php
-                        $evidenceLabels = [
-                            1 => 'Signed Requisition Form',
-                            2 => 'Email Evidence',
-                            3 => 'Advance Ruling',
-                            4 => 'Customs Reference',
-                        ];
-                    @endphp
-
-                    @foreach([1, 2, 3, 4] as $en)
-                        <div class="flex items-center gap-4">
-                            <label class="w-52 shrink-0 text-xs font-semibold text-slate-700">
-                                {{ $evidenceLabels[$en] }}
-                                @if($record->{'hs_evidence_file_' . $en})
-                                    <span
-                                        class="ml-1 text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Exists</span>
-                                @elseif($en === 1)
-                                    <span
-                                        class="ml-1 text-[10px] text-rose-600 font-semibold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">Missing</span>
+                                @if($filePath)
+                                    <div class="flex items-center gap-3 text-xs">
+                                        <a href="{{ route('clearance.view', ['id' => $record->id, 'field' => $fieldName]) }}"
+                                            target="_blank"
+                                            class="inline-flex items-center text-sky-600 hover:text-sky-800 font-semibold transition"
+                                            title="View file in browser">
+                                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                            View
+                                        </a>
+                                        <!-- Download removed — View (pre-signed S3 URL) works in production;
+                                             download routes through server which is blocked by S3 IAM policy.  -->
+                                        <!-- @if(auth()->user()?->canDownload())
+                                            <a href="{{ route('clearance.download', ['id' => $record->id, 'field' => $fieldName]) }}"
+                                                class="inline-flex items-center text-brand-600 hover:text-brand-800 font-semibold transition"
+                                                title="Download file">
+                                                Download
+                                            </a>
+                                        @endif -->
+                                        <button type="button"
+                                            onclick="confirmDeleteSingleFile('{{ $record->id }}', '{{ $fieldName }}', '{{ addslashes(basename($filePath)) }}')"
+                                            class="inline-flex items-center text-rose-600 hover:text-rose-800 font-semibold transition"
+                                            title="Delete file permanently">
+                                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Delete File
+                                        </button>
+                                    </div>
                                 @endif
-                            </label>
-                            <div class="flex-1">
-                                <input type="file" name="hs_evidence_file_{{ $en }}" class="w-full text-xs">
+                            </div>
+
+                            @if($filePath)
+                                <div class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 text-xs font-mono text-slate-700">
+                                    <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span class="truncate flex-1 select-all" title="{{ basename($filePath) }}">{{ basename($filePath) }}</span>
+                                </div>
+                            @endif
+
+                            <div>
+                                <label class="block text-[11px] text-slate-500 mb-1">
+                                    {{ $filePath ? 'Upload replacement file (optional):' : 'Choose file to attach:' }}
+                                </label>
+                                <input type="file" name="{{ $fieldName }}"
+                                    accept=".pdf,.xlsx,.xls,.doc,.docx,.jpg,.jpeg,.png"
+                                    class="w-full text-xs text-slate-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300">
                             </div>
                         </div>
                     @endforeach
 
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-4 pt-2">
                         <label class="w-52 shrink-0 text-xs font-semibold text-slate-500">Create Date</label>
                         <div class="flex-1 text-xs text-slate-400 italic">{{ $record->create_date ?? 'Auto-set' }}</div>
                     </div>
 
                     <div class="flex items-center gap-4">
                         <label class="w-52 shrink-0 text-xs font-semibold text-slate-500">Update Date</label>
-                        <div class="flex-1 text-xs text-slate-400 italic">Auto-set on save</div>
+                        <!-- Display the actual update_date and an Up to date indicator badge -->
+                        <div class="flex-1 text-xs text-slate-700 flex items-center gap-2">
+                            <span>{{ $record->update_date ?? 'Auto-set on save' }}</span>
+                            @if($record->update_date)
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">Up to date</span>
+                            @endif
+                        </div>
                     </div>
 
                 </div>
             </div>
 
-             <!-- Actions -->
-                    <!-- Delete button on the left, Cancel + Save on the right -->
-                    <div class="flex items-center justify-between pt-4 border-t border-slate-200">
-                         <!-- Only display Delete Record button if user has explicit canDelete() privileges. -->
-                        @if(auth()->user()?->canDelete())
-                            <button type="button" onclick="document.getElementById('deleteModal').classList.remove('hidden')"
-                                class="px-4 py-2 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition">
-                                Delete Record
-                            </button>
-                        @else
-                            <div></div>
-                        @endif
-                        <div class="flex items-center space-x-3">
-                            <a href="{{ route('clearance.show', $record->id) }}"
-                                class="px-5 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">Cancel</a>
-                            <button type="submit"
-                                class="px-6 py-2 text-xs font-semibold text-white bg-brand-700 hover:bg-brand-800 rounded-lg shadow-sm transition">
-                                Update Clearance Record
-                            </button>
-                        </div>
-                    </div>
+            <!-- Actions -->
+            <!-- Delete button on the left, Cancel + Save on the right -->
+            <div class="flex items-center justify-between pt-4 border-t border-slate-200">
+                <!-- Only display Delete Record button if user has explicit canDelete() privileges. -->
+                @if(auth()->user()?->canDelete())
+                    <button type="button" onclick="document.getElementById('deleteModal').classList.remove('hidden')"
+                        class="px-4 py-2 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition">
+                        Delete Record
+                    </button>
+                @else
+                    <div></div>
+                @endif
+                <div class="flex items-center space-x-3">
+                    <a href="{{ route('clearance.show', $record->id) }}"
+                        class="px-5 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">Cancel</a>
+                    <button type="submit"
+                        class="px-6 py-2 text-xs font-semibold text-white bg-brand-700 hover:bg-brand-800 rounded-lg shadow-sm transition">
+                        Update Clearance Record
+                    </button>
+                </div>
+            </div>
 
         </form>
     </div>
@@ -565,4 +756,20 @@
             </div>
         </div>
     </div>
+
+  <!-- Hidden standalone form for single file deletion to prevent HTML form nesting -->
+    <form id="deleteSingleFileForm" method="POST" action="" class="hidden">
+        @csrf
+        @method('DELETE')
+    </form>
+
+    <script>
+        function confirmDeleteSingleFile(recordId, field, fileName) {
+            if (confirm('Are you sure you want to delete the file "' + fileName + '"?\nThis will remove the file permanently and clear this slot.')) {
+                const form = document.getElementById('deleteSingleFileForm');
+                form.action = '/clearance/' + recordId + '/file/' + field;
+                form.submit();
+            }
+        }
+    </script>
 @endsection

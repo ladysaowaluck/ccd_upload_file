@@ -25,16 +25,38 @@ class GetOutstandingClearanceQuery
             'license4',
         ]);
 
-        // 1. Evidence compliance status filter (default: 'all' to show all customer_clearance_data records)
-        // Default status to 'all' so the /outstanding page displays all records from customer_clearance_data, even if evidence or other fields do not exist.
+        // Expanded Document & Evidence Compliance status filter to support filtering
+        // by missing reference files (Catalog, SDS), missing HS evidence files, or both.
         $status = $filters['status'] ?? 'all';
-        if ($status === 'outstanding') {
+        if ($status === 'outstanding' || $status === 'missing_evidence') {
             $query->where(function ($sub) {
                 $sub->whereNull('hs_evidence_file_1')
                     ->whereNull('hs_evidence_file_2')
                     ->whereNull('hs_evidence_file_3');
             });
-        } elseif ($status === 'completed') {
+        } elseif ($status === 'missing_ref') {
+            $query->where(function ($sub) {
+                $sub->where(function ($q) {
+                    $q->whereNull('reference_file_1')->orWhere('reference_file_1', '');
+                })->where(function ($q) {
+                    $q->whereNull('reference_file_2')->orWhere('reference_file_2', '');
+                });
+            });
+        } elseif ($status === 'missing_any') {
+            $query->where(function ($sub) {
+                $sub->where(function ($ref) {
+                    $ref->where(function ($q) {
+                        $q->whereNull('reference_file_1')->orWhere('reference_file_1', '');
+                    })->where(function ($q) {
+                        $q->whereNull('reference_file_2')->orWhere('reference_file_2', '');
+                    });
+                })->orWhere(function ($evi) {
+                    $evi->whereNull('hs_evidence_file_1')
+                        ->whereNull('hs_evidence_file_2')
+                        ->whereNull('hs_evidence_file_3');
+                });
+            });
+        } elseif ($status === 'completed' || $status === 'fully_documented') {
             $query->where(function ($sub) {
                 $sub->whereNotNull('hs_evidence_file_1')
                     ->orWhereNotNull('hs_evidence_file_2')
@@ -91,7 +113,6 @@ class GetOutstandingClearanceQuery
             $query->where('product_code_1', 'LIKE', '%' . trim((string) $filters['product_code_1']) . '%');
         }
 
-        // Agent : Added product_code_2, brand_name, model_name, country_of_origin filters
         // 8b. Product Code 2 filter
         if (!empty($filters['product_code_2'])) {
             $query->where('product_code_2', 'LIKE', '%' . trim((string) $filters['product_code_2']) . '%');
@@ -181,10 +202,20 @@ class GetOutstandingClearanceQuery
         $sortBy = $filters['sort_by'] ?? 'job_no';
         $sortDir = strtolower($filters['sort_dir'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
         $allowedSorts = [
-            'id', 'job_no', 'customer_name', 'master_branch_id', 'imp_exp',
-            'hs_code', 'tariff_ad_valorem', 'statistic_code_id', 'quantity_unit_id',
-            'product_code_1', 'product_description_en', 'product_description_th',
-            'create_date', 'update_date'
+            'id',
+            'job_no',
+            'customer_name',
+            'master_branch_id',
+            'imp_exp',
+            'hs_code',
+            'tariff_ad_valorem',
+            'statistic_code_id',
+            'quantity_unit_id',
+            'product_code_1',
+            'product_description_en',
+            'product_description_th',
+            'create_date',
+            'update_date'
         ];
 
         if (in_array($sortBy, $allowedSorts, true)) {

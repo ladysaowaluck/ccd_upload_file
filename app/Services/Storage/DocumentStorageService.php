@@ -29,11 +29,18 @@ class DocumentStorageService
     {
         $directory = trim($directory, '/');
 
+        // Sanitize and bound filename length to prevent S3 key issues and database varchar(191) truncation
         if ($customFileName) {
-            $fileName = $customFileName;
+            $ext = pathinfo($customFileName, PATHINFO_EXTENSION);
+            $nameWithoutExt = pathinfo($customFileName, PATHINFO_FILENAME);
+            $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $nameWithoutExt);
+            $cleanName = substr($cleanName, 0, 150);
+            $fileName = $ext ? "{$cleanName}.{$ext}" : $cleanName;
         } else {
-            $cleanOriginal = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $file->getClientOriginalName());
-            $fileName = time() . '_' . $cleanOriginal;
+            $ext = $file->getClientOriginalExtension();
+            $nameWithoutExt = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $cleanOriginal = substr(preg_replace('/[^A-Za-z0-9_\-]/', '_', $nameWithoutExt), 0, 130);
+            $fileName = time() . '_' . $cleanOriginal . ($ext ? ".{$ext}" : '');
         }
 
         /*
@@ -259,7 +266,16 @@ class DocumentStorageService
             $bucket = $this->getCloudBucket();
             $region = $this->getCloudRegion();
             $testPath = 'reference/.probe_' . date('Ymd_His');
-            Storage::disk($this->cloudDisk)->put($testPath, 'probe');
+            // Explicitly verify put() return boolean since throw is false in filesystems.php
+            $putSuccess = Storage::disk($this->cloudDisk)->put($testPath, 'probe');
+            if (!$putSuccess) {
+                return [
+                    'connected' => false,
+                    'bucket' => $bucket,
+                    'region' => $region,
+                    'message' => "AWS S3 write test failed. The bucket [{$bucket}] rejected the write probe (check IAM policy or server IP whitelist).",
+                ];
+            }
             Storage::disk($this->cloudDisk)->delete($testPath);
 
             return [
@@ -285,20 +301,15 @@ class DocumentStorageService
     {
         $cleanPath = ltrim($path, '/');
 
-        // $serverFile = "{$this->serverStoragePath}/{$cleanPath}";
-        // if (file_exists($serverFile)) {
-        //     return true;
-        // }
-
-        /*
-        if (Storage::disk($this->localDisk)->exists($cleanPath)) {
-            return true;
-        }
-        */
-
         // Check AWS S3 cloud bucket.
         if ($this->isCloudConfigured()) {
-            return Storage::disk($this->cloudDisk)->fileExists($cleanPath);
+            // Defensive try-catch to prevent uncaught S3 exceptions from causing 500 errors
+            try {
+                return Storage::disk($this->cloudDisk)->fileExists($cleanPath);
+            } catch (\Throwable $e) {
+                Log::warning("DocumentStorageService: exists check failed on S3 for [{$cleanPath}]: " . $e->getMessage());
+                return false;
+            }
         }
 
         return false;
@@ -329,26 +340,17 @@ class DocumentStorageService
         $cleanPath = ltrim($path, '/');
         $deleted = false;
 
-        // $serverFile = "{$this->serverStoragePath}/{$cleanPath}";
-        // if (file_exists($serverFile)) {
-        //     $deleted = @unlink($serverFile) || $deleted;
-        // }
-        //
-        // // Also delete /mnt/efs/evidence mirror if applicable.
-        // $evidenceMirror = "{$this->serverStoragePath}/evidence/" . basename($cleanPath);
-        // if (file_exists($evidenceMirror)) {
-        //     @unlink($evidenceMirror);
-        // }
-
-        /*
-        if (Storage::disk($this->localDisk)->exists($cleanPath)) {
-            $deleted = Storage::disk($this->localDisk)->delete($cleanPath) || $deleted;
-        }
-        */
-
         // Delete from AWS S3 cloud bucket if configured.
-        if ($this->isCloudConfigured() && Storage::disk($this->cloudDisk)->fileExists($cleanPath)) {
-            $deleted = Storage::disk($this->cloudDisk)->delete($cleanPath) || $deleted;
+        if ($this->isCloudConfigured()) {
+            // Wrap S3 deletion in defensive try-catch so failing to delete an old S3 object never causes a 500 error
+            try {
+                if (Storage::disk($this->cloudDisk)->fileExists($cleanPath)) {
+                    $deleted = (bool) Storage::disk($this->cloudDisk)->delete($cleanPath);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("DocumentStorageService: Could not delete S3 file [{$cleanPath}]: " . $e->getMessage());
+                $deleted = false;
+            }
         }
 
         return $deleted;
@@ -358,8 +360,16 @@ class DocumentStorageService
     public function getTemporaryUrl(string $path, int $minutesExpiry = 5): ?string
     {
         $cleanPath = ltrim($path, '/');
-        if ($this->isCloudConfigured() && Storage::disk($this->cloudDisk)->fileExists($cleanPath)) {
-            return Storage::disk($this->cloudDisk)->temporaryUrl($cleanPath, now()->addMinutes($minutesExpiry));
+        if ($this->isCloudConfigured()) {
+            // Safely guard temporaryUrl against S3 connectivity or permission exceptions
+            try {
+                if (Storage::disk($this->cloudDisk)->fileExists($cleanPath)) {
+                    return Storage::disk($this->cloudDisk)->temporaryUrl($cleanPath, now()->addMinutes($minutesExpiry));
+                }
+            } catch (\Throwable $e) {
+                Log::warning("DocumentStorageService: getTemporaryUrl failed on S3 for [{$cleanPath}]: " . $e->getMessage());
+                return null;
+            }
         }
         return null;
     }
@@ -381,9 +391,18 @@ class DocumentStorageService
         }
         */
 
-        // Download from AWS S3 cloud bucket.
-        if ($this->isCloudConfigured() && Storage::disk($this->cloudDisk)->fileExists($cleanPath)) {
-            return Storage::disk($this->cloudDisk)->download($cleanPath, $fileName);
+        // Wrap S3 fileExists+download in try-catch — production S3 403 returns a
+        // plain-text body that Flysystem cannot parse as XML, causing an unhandled exception → 500.
+        // We convert that to a 503 (service temporarily unavailable) instead.
+        if ($this->isCloudConfigured()) {
+            try {
+                if (Storage::disk($this->cloudDisk)->fileExists($cleanPath)) {
+                    return Storage::disk($this->cloudDisk)->download($cleanPath, $fileName);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("DocumentStorageService: S3 download failed for [{$cleanPath}]: " . $e->getMessage());
+                abort(503, 'File temporarily unavailable. Please try again later.');
+            }
         }
 
         abort(404, "Document '{$fileName}' was not found on AWS S3 bucket.");

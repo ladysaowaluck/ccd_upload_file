@@ -32,7 +32,7 @@ class RegistrationTest extends TestCase
         Mail::fake();
 
         $username = 'emp_' . Str::random(8);
-        $email = $username . '@th.nissin-asia.com';
+        $email = strtolower($username . '@th.nissin-asia.com');
 
         $response = $this->post('/register', [
             'name' => 'Test Employee',
@@ -57,7 +57,7 @@ class RegistrationTest extends TestCase
 
         // Verification email dispatched
         Mail::assertSent(VerificationEmail::class, function ($mail) use ($email) {
-            return $mail->hasTo($email);
+            return $mail->hasTo(strtolower($email));
         });
     }
 

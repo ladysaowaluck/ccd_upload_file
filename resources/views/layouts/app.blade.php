@@ -11,7 +11,9 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
     <!-- Tailwind CSS CDN Fallback for Zero-Build Immediate High-Performance Rendering -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -113,6 +115,7 @@
             class="w-full lg:w-64 lg:sticky lg:top-0 lg:h-screen lg:self-start bg-slate-900 border-r border-slate-800 text-slate-300 flex-shrink-0 flex flex-col z-30">
             <div
                 class="h-16 flex items-center justify-between px-5 bg-slate-950 text-white border-b border-slate-800/80">
+
                 <a href="{{ route('clearance.index') }}" class="flex items-center gap-3 group transition">
                     <img src="{{ asset('images/Logo Nissin-1.png') }}" alt="SNC Logo"
                         class="h-8 w-auto object-contain flex-shrink-0 group-hover:brightness-110 transition">
@@ -123,10 +126,12 @@
 
                     <div class="flex flex-col min-w-0">
                         <div class="flex items-center gap-1.5 leading-none">
-                            <span class="text-[15px] font-extrabold tracking-tight text-white font-brand group-hover:text-brand-300 transition-colors">
+                            <span
+                                class="text-[15px] font-extrabold tracking-tight text-white font-brand group-hover:text-brand-300 transition-colors">
                                 CCD
                             </span>
-                            <span class="text-[10px] font-extrabold tracking-widest uppercase px-1.5 py-0.5 rounded bg-cargo-950/90 text-cargo-400 border border-cargo-600/50 shadow-sm leading-none">
+                            <span
+                                class="text-[10px] font-extrabold tracking-widest uppercase px-1.5 py-0.5 rounded bg-cargo-950/90 text-cargo-400 border border-cargo-600/50 shadow-sm leading-none">
                                 SYSTEM
                             </span>
                         </div>
@@ -183,7 +188,7 @@
                     </svg>
                     Database
                 </a>
-               <!-- Only render Weekly HS Exports report link if user has download permissions -->
+                <!-- Only render Weekly HS Exports report link if user has download permissions -->
                 @if(auth()->user()?->canDownload())
                     <a href="{{ route('export.weekly') }}"
                         class="flex items-center px-3 py-2.5 rounded-lg {{ request()->routeIs('export.weekly*') ? 'bg-brand-700 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-300' }} transition">
@@ -293,9 +298,10 @@
                 </div>
                 <div class="flex items-center space-x-4">
                     @if(auth()->check())
-                         <!-- Inform unassigned users that their account is operating in read-only access mode  -->
+                        <!-- Inform unassigned users that their account is operating in read-only access mode  -->
                         @if(auth()->user()->isReadOnly())
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                                 Read-Only Access
                             </span>
                         @endif
@@ -320,13 +326,13 @@
             <main class="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full">
                 @if (session('success'))
                     <!-- <div
-                        class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center shadow-sm">
-                        <svg class="w-5 h-5 mr-3 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        <span>{{ session('success') }}</span>
-                    </div> -->
+                            class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center shadow-sm">
+                            <svg class="w-5 h-5 mr-3 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>{{ session('success') }}</span>
+                        </div> -->
                 @endif
 
                 <!-- Upload Destination & Address Debug Inspector Card -->
@@ -395,6 +401,118 @@
             </main>
         </div>
     </div>
+
+    <!-- Global File Validation Modal for File Upload Failures (Size Over & Format File) -->
+    <div id="fileValidationModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div
+            class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-150">
+            <div class="p-6">
+                <div class="flex items-start gap-4">
+                    <div
+                        class="flex-shrink-0 w-12 h-12 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 id="fileValidationTitle" class="text-sm font-bold text-slate-800">File Attachment Error</h3>
+                        <p id="fileValidationMessage" class="text-xs text-slate-600 mt-1.5 leading-relaxed"></p>
+                        <div id="fileValidationDetails"
+                            class="mt-3 p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-500 font-mono space-y-1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end">
+                <button type="button" onclick="closeFileValidationModal()"
+                    class="px-4 py-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg shadow-sm transition">
+                    Understand & Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client-side File Validation Script (Size limit 20MB & Allowed Extensions) -->
+    <script>
+        const ALLOWED_DOCUMENT_EXTENSIONS = ['pdf', 'xlsx', 'xls', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+        const ALLOWED_EXCEL_EXTENSIONS = ['xlsx', 'xls'];
+        const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
+
+        function showFileValidationError(title, message, details = []) {
+            const modal = document.getElementById('fileValidationModal');
+            if (!modal) return;
+            document.getElementById('fileValidationTitle').textContent = title;
+            document.getElementById('fileValidationMessage').textContent = message;
+
+            const detailsBox = document.getElementById('fileValidationDetails');
+            if (details.length > 0) {
+                detailsBox.innerHTML = details.map(d => `<div>• ${d}</div>`).join('');
+                detailsBox.classList.remove('hidden');
+            } else {
+                detailsBox.classList.add('hidden');
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeFileValidationModal() {
+            const modal = document.getElementById('fileValidationModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        document.addEventListener('change', function (e) {
+            if (e.target && e.target.type === 'file') {
+                const input = e.target;
+                const file = input.files && input.files[0];
+                if (!file) return;
+
+                const fileName = file.name;
+                const fileSize = file.size;
+                const ext = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
+                const isExcelOnly = input.name === 'single_record' || input.name === 'multi_record';
+                const allowedExtensions = isExcelOnly ? ALLOWED_EXCEL_EXTENSIONS : ALLOWED_DOCUMENT_EXTENSIONS;
+
+                // 1. Check file format / extension
+                if (!allowedExtensions.includes(ext)) {
+                    input.value = ''; // Reset invalid file
+                    showFileValidationError(
+                        'Invalid File Format',
+                        'The selected file format is not supported. Please choose an authorized file format.',
+                        [
+                            `Selected File: ${fileName}`,
+                            `Detected Format: .${ext || 'unknown'}`,
+                            `Allowed Formats: ${allowedExtensions.map(e => '.' + e).join(', ')}`
+                        ]
+                    );
+                    return;
+                }
+
+                // 2. Check file size (Max 20MB)
+                if (fileSize > MAX_FILE_SIZE_BYTES) {
+                    const currentMb = (fileSize / (1024 * 1024)).toFixed(2);
+                    input.value = ''; // Reset oversized file
+                    showFileValidationError(
+                        'File Size Exceeded Limit',
+                        'The selected file is too large to attach. Maximum allowed size is 20 MB per file.',
+                        [
+                            `Selected File: ${fileName}`,
+                            `Current Size: ${currentMb} MB`,
+                            `Maximum Limit: 20.00 MB`
+                        ]
+                    );
+                    return;
+                }
+            }
+        });
+
+        // Close on clicking backdrop
+        window.addEventListener('click', function (e) {
+            const modal = document.getElementById('fileValidationModal');
+            if (modal && e.target === modal) {
+                closeFileValidationModal();
+            }
+        });
+    </script>
 </body>
 
 </html>

@@ -41,8 +41,8 @@ class CustomerClearanceData extends Model
         // 'quantity_unit', // compatibility alias
         'privilege_code',
         'tariff_ad_valorem',
-        // 'tariff_specific_rate_unit_id',
-        'tariff_specific_rate_unit', // compatibility alias
+        'tariff_specific_rate_unit_id',
+        // 'tariff_specific_rate_unit', // compatibility alias
         'tariff_specific_rate_baht',
         'anti_dumping_ad_valorem',
         'excise_tax_ad_valorem',
@@ -199,8 +199,43 @@ class CustomerClearanceData extends Model
         return $this->attributes['quantity_unit'] ?? $this->quantityUnit?->unit ?? null;
     }
 
-    // Check if clearance record has zero uploaded evidence files
+    // Added unified reference and evidence file compliance inspection methods
+    // so both Reference Files (Catalog, SDS) and HS Evidence Files are explicitly checked.
+    public function hasReferenceFile(): bool
+    {
+        return !empty($this->reference_file_1) || !empty($this->reference_file_2);
+    }
 
+    public function hasHsEvidenceFile(): bool
+    {
+        return !empty($this->hs_evidence_file_1)
+            || !empty($this->hs_evidence_file_2)
+            || !empty($this->hs_evidence_file_3)
+            || !empty($this->hs_evidence_file_4);
+    }
+
+    public function isMissingReference(): bool
+    {
+        return !$this->hasReferenceFile();
+    }
+
+    public function isFullyDocumented(): bool
+    {
+        return $this->hasReferenceFile() && $this->hasHsEvidenceFile();
+    }
+
+    public function isPartiallyDocumented(): bool
+    {
+        return ($this->hasReferenceFile() && !$this->hasHsEvidenceFile())
+            || (!$this->hasReferenceFile() && $this->hasHsEvidenceFile());
+    }
+
+    public function isMissingAllDocuments(): bool
+    {
+        return !$this->hasReferenceFile() && !$this->hasHsEvidenceFile();
+    }
+
+    // Check if clearance record has zero uploaded evidence files
     public function isMissingEvidence(): bool
     {
         return empty($this->hs_evidence_file_1)

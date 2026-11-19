@@ -31,8 +31,11 @@ Route::middleware('guest')->group(function () {
 
     Route::get('/forgot-password', [AuthPasswordController::class, 'showForgot'])->name('password.forgot');
     Route::post('/forgot-password', [AuthPasswordController::class, 'submitForgot'])->name('password.forgot.submit');
-    Route::get('/reset-password', [AuthPasswordController::class, 'showReset'])->name('password.reset');
-    Route::post('/reset-password', [AuthPasswordController::class, 'submitReset'])->name('password.reset.submit');
+
+    // forgot-password form/submit stay inside guest middleware (only for non-authenticated users).
+    // reset-password routes are moved OUTSIDE guest middleware so that an already-logged-in user
+    // (e.g. User B in Browser B) can still follow a reset link meant for User A without being
+    // silently redirected away by the guest guard. See standalone routes below.
 
     // Resend email verification notification (referenced from backup EmailVerificationNotificationController)
     Route::get('/verify-email-resend', [EmailVerificationNotificationController::class, 'show'])->name('verification.resend');
@@ -47,6 +50,15 @@ Route::middleware('guest')->group(function () {
     Route::post('/req_system_auth', [EmailRequestSystemAuth::class, 'SystemAuthReq'])->name('req.system_auth.post');
     Route::get('/req_system_auth_verify/{time}/{token}', [EmailRequestSystemAuth::class, 'SystemAuthVerify'])->name('req.system_auth.verify');
 });
+
+// Password reset routes — standalone (no guest/auth middleware) so they work
+// whether the visitor is logged in or not. Session logic is handled in the controller.
+Route::get('/reset-password', [AuthPasswordController::class, 'showReset'])->name('password.reset');
+Route::post('/reset-password', [AuthPasswordController::class, 'submitReset'])->name('password.reset.submit');
+// Confirm-logout page: shown when another user is logged in and opens a reset link.
+Route::get('/reset-password/confirm-logout', [AuthPasswordController::class, 'showConfirmLogout'])->name('password.reset.confirm-logout');
+// Agree button POST: logs out the current session, then redirects to the reset form.
+Route::post('/reset-password/confirm-logout', [AuthPasswordController::class, 'confirmLogout'])->name('password.reset.logout-confirm');
 
 // Confirm password routes for authenticated users referenced from backup ConfirmablePasswordController
 Route::middleware('auth')->group(function () {
@@ -116,6 +128,8 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/announcement', [ClearanceGridController::class, 'updateAnnouncement'])->name('clearance.announcement.update');
             Route::get('/{id}/edit', [ClearanceGridController::class, 'edit'])->name('clearance.edit')->where('id', '[0-9]+');
             Route::put('/{id}', [ClearanceGridController::class, 'update'])->name('clearance.update')->where('id', '[0-9]+');
+            //Route to delete an individual attached file (reference or evidence) from a clearance record
+            Route::delete('/{id}/file/{field}', [ClearanceGridController::class, 'deleteDocument'])->name('clearance.file.destroy')->where('id', '[0-9]+');
         });
 
         // Restrict record deletion to can.delete middleware so standard users are denied delete access.

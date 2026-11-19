@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-        <img src="{{ asset('images/SNC LOGO.png') }}" alt="Logo" class="w-21 h-auto mx-auto mb-6">
+        <img src="{{ asset('images/SNC LOGO.png') }}" alt="Logo" class="h-10 w-auto mx-auto mb-8">
         <div class="text-center mb-6">
             <h2 class="text-xl font-bold text-slate-900">Sign In</h2>
             <p class="text-xs text-slate-500 mt-1">Access customs clearance database and compliance audits</p>
@@ -16,7 +16,7 @@
             </div>
         @endif
 
-         <!-- Display emerald status pop-up banner after registration or password reset, matching forgot-password styling -->
+        <!-- Display emerald status pop-up banner after registration or password reset, matching forgot-password styling -->
         <!-- @if(session('status'))
             <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-700 font-medium">
                 <p>{{ session('status') }}</p>

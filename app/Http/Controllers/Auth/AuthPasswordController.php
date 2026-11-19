@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Auth\AdminUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\View\View;
@@ -52,9 +53,11 @@ class AuthPasswordController extends Controller
 
     // Step 2: Show the reset-password form.
     // Token and email come from query string in the emailed link.
+    // If another user is logged in on this browser, redirect to a standalone
+    // confirm-logout page FIRST (instead of silently logging them out or showing a broken modal).
+    // The confirm page shows who is logged in and asks them to agree before proceeding.
     public function showReset(Request $request): View|RedirectResponse
     {
-        // Read token and email strictly from query string as generated in the email link
         $token = (string) $request->query('token', '');
         $email = (string) $request->query('email', '');
 
@@ -63,13 +66,62 @@ class AuthPasswordController extends Controller
                 ->withErrors(['email' => 'Please use the password reset link sent to your email inbox.']);
         }
 
+        // Another user is logged in — redirect to the confirm-logout page so they
+        // explicitly agree before their session is terminated.
+        if (Auth::check()) {
+            return redirect()->route('password.reset.confirm-logout', [
+                'token' => $token,
+                'email' => $email,
+            ]);
+        }
+
         return view('auth.reset-password', [
             'token' => $token,
             'email' => $email,
         ]);
     }
 
+    // Shows the standalone "you are signed in — agree to log out?" confirmation page.
+    // Receives token + email via query string forwarded from showReset redirect.
+    public function showConfirmLogout(Request $request): View|RedirectResponse
+    {
+        $token = (string) $request->query('token', '');
+        $email = (string) $request->query('email', '');
+
+        if (!$token || !$email) {
+            return redirect()->route('password.forgot')
+                ->withErrors(['email' => 'Invalid password reset link.']);
+        }
+
+        // If nobody is logged in anymore, go straight to the reset form.
+        if (!Auth::check()) {
+            return redirect()->route('password.reset', ['token' => $token, 'email' => $email]);
+        }
+
+        return view('auth.reset-password-confirm-logout', [
+            'token' => $token,
+            'email' => $email,
+            'loggedInName' => Auth::user()->name ?? Auth::user()->username ?? 'current user',
+        ]);
+    }
+
+    // Handles the Agree button POST. Logs out the active session, then
+    // redirects to the reset form with a clean session.
+    public function confirmLogout(Request $request): RedirectResponse
+    {
+        $token = (string) $request->input('token', '');
+        $email = (string) $request->input('email', '');
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('password.reset', ['token' => $token, 'email' => $email]);
+    }
+
     // Step 2 POST: Validate token against password_resets, then update password.
+    // After a successful reset, always go to login — never to the dashboard — so the
+    // correct user (User A) signs in fresh with their new password.
     public function submitReset(Request $request): RedirectResponse
     {
         $request->validate([

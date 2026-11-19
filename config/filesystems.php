@@ -60,8 +60,11 @@ return [
             'http' => [
                 'verify' => env('AWS_VERIFY', false),
             ],
-            'throw' => true,
-            'report' => true,
+            // Changed throw/report to false — S3 403/5xx with non-XML bodies cause
+            // Flysystem to throw unparseable exceptions → HTTP 500. DocumentStorageService
+            // already handles and logs S3 errors internally via its own try-catch blocks.
+            'throw' => false,
+            'report' => false,
         ],
 
     ],

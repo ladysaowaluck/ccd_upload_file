@@ -30,19 +30,27 @@ class UpdateClearanceRecordAction
             }
         }
 
+        // Sanitize job_no to prevent filesystem or S3 key issues with special characters
+        $cleanJobNo = preg_replace('/[^A-Za-z0-9_\-]/', '_', (string) $record->job_no);
+
         // Process file uploads
         foreach (['reference_file_1', 'reference_file_2'] as $refField) {
             if (!empty($data[$refField]) && $data[$refField] instanceof UploadedFile) {
                 $file = $data[$refField];
                 $cleanName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $file->getClientOriginalName());
                 $baseName = preg_replace('/^(?:CCD\d{4}-\d{4}_(?:reference_file_\d|rf\d|hs_evidence_file_\d|hs\d)_)+/', '', $cleanName);
-                $fileName = "{$record->job_no}_{$refField}_{$baseName}";
+                $fileName = "{$cleanJobNo}_{$refField}_{$baseName}";
                 /*
                 $file->storeAs('public/reference', $fileName);
                 $data[$refField] = "reference/{$fileName}";
                 */
+                // Wrap old file deletion in defensive try-catch so failure to delete old S3 object never blocks attaching new file
                 if (!empty($record->$refField)) {
-                    $this->storageService->delete($record->$refField);
+                    try {
+                        $this->storageService->delete($record->$refField);
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning("UpdateClearanceRecordAction: Could not delete old reference file: " . $e->getMessage());
+                    }
                 }
                 $data[$refField] = $this->storageService->store($file, 'reference', $fileName);
             } else {
@@ -55,17 +63,45 @@ class UpdateClearanceRecordAction
                 $file = $data[$hsField];
                 $cleanName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $file->getClientOriginalName());
                 $baseName = preg_replace('/^(?:CCD\d{4}-\d{4}_(?:reference_file_\d|rf\d|hs_evidence_file_\d|hs\d)_)+/', '', $cleanName);
-                $fileName = "{$record->job_no}_{$hsField}_{$baseName}";
+                $fileName = "{$cleanJobNo}_{$hsField}_{$baseName}";
                 /*
                 $file->storeAs('public/hs_evidence', $fileName);
                 $data[$refField] = "hs_evidence/{$fileName}";
                 */
+                // Wrap old file deletion in defensive try-catch so failure to delete old S3 object never blocks attaching new file
                 if (!empty($record->$hsField)) {
-                    $this->storageService->delete($record->$hsField);
+                    try {
+                        $this->storageService->delete($record->$hsField);
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning("UpdateClearanceRecordAction: Could not delete old evidence file: " . $e->getMessage());
+                    }
                 }
                 $data[$hsField] = $this->storageService->store($file, 'hs_evidence', $fileName);
             } else {
                 unset($data[$hsField]);
+            }
+        }
+
+        // Handle removal of existing files if delete_{field} flag is passed during clearance update
+        $allAttachmentFields = [
+            'reference_file_1',
+            'reference_file_2',
+            'hs_evidence_file_1',
+            'hs_evidence_file_2',
+            'hs_evidence_file_3',
+            'hs_evidence_file_4',
+        ];
+        foreach ($allAttachmentFields as $delField) {
+            if (!empty($data["delete_{$delField}"])) {
+                if (!empty($record->$delField)) {
+                    // Guard delete flag execution with try-catch
+                    try {
+                        $this->storageService->delete($record->$delField);
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning("UpdateClearanceRecordAction: Could not delete file for {$delField}: " . $e->getMessage());
+                    }
+                }
+                $data[$delField] = null;
             }
         }
 
@@ -89,6 +125,12 @@ class UpdateClearanceRecordAction
         }
         if (isset($data['country_of_origin'])) {
             $data['country_of_origin'] = substr(trim((string) $data['country_of_origin']), 0, 30);
+        }
+        // Normalize product_year to integer or null for defensive persistence.
+        if (array_key_exists('product_year', $data)) {
+            $data['product_year'] = (isset($data['product_year']) && is_numeric($data['product_year']))
+                ? (int) $data['product_year']
+                : null;
         }
         if (isset($data['usage']) && !isset($data['usages'])) {
             $data['usages'] = $data['usage'];

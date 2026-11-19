@@ -38,7 +38,7 @@ class SanctumAuthenticationTest extends TestCase
         $response->assertStatus(201)
             ->assertJson([
                 'success' => true,
-                'message' => 'Registration successful. Please check your email to verify and activate your account.',
+                'message' => 'Registration successful. Please check your email to verify your account.',
             ]);
 
         $this->assertDatabaseHas('users', [

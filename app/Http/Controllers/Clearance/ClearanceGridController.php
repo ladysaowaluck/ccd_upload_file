@@ -15,6 +15,7 @@ use App\Services\Storage\DocumentStorageService;
 use App\Services\System\AnnouncementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class ClearanceGridController extends Controller
@@ -53,21 +54,51 @@ class ClearanceGridController extends Controller
             });
         }
 
-        $records  = $query->orderBy('id', 'desc')->paginate(20)->withQueryString();
+        $records = $query->orderBy('id', 'desc')->paginate(20)->withQueryString();
         $branches = MasterBranch::orderBy('branch_name')->get();
 
-        // Dashboard Summary Statistics
-        $totalRecords         = CustomerClearanceData::count();
+        // Calculate document compliance statistics for BOTH Reference Files (Catalog, SDS) and HS Evidence Files.
+        $totalRecords = CustomerClearanceData::count();
+
+        // Records missing both reference_file_1 and reference_file_2
+        $missingReferenceCount = CustomerClearanceData::where(function ($q) {
+            $q->where(function ($sub) {
+                $sub->whereNull('reference_file_1')->orWhere('reference_file_1', '');
+            })->where(function ($sub) {
+                $sub->whereNull('reference_file_2')->orWhere('reference_file_2', '');
+            });
+        })->count();
+
+        // Records missing primary HS evidence files
         $missingEvidenceCount = CustomerClearanceData::where(function ($q) {
             $q->whereNull('hs_evidence_file_1')->orWhere('hs_evidence_file_1', '');
         })->count();
-        $verifiedCount        = max(0, $totalRecords - $missingEvidenceCount);
+
+        // Records missing either reference file or evidence file
+        $missingAnyDocumentCount = CustomerClearanceData::where(function ($q) {
+            $q->where(function ($ref) {
+                $ref->where(function ($sub) {
+                    $sub->whereNull('reference_file_1')->orWhere('reference_file_1', '');
+                })->where(function ($sub) {
+                    $sub->whereNull('reference_file_2')->orWhere('reference_file_2', '');
+                });
+            })->orWhere(function ($evi) {
+                $evi->whereNull('hs_evidence_file_1')->orWhere('hs_evidence_file_1', '');
+            });
+        })->count();
+
+        $verifiedCount = max(0, $totalRecords - $missingEvidenceCount);
+        $fullyDocumentedCount = max(0, $totalRecords - $missingAnyDocumentCount);
         $activeCustomersCount = MasterCustomer::where('is_enable', 0)->count();
 
         $dashboardStats = [
-            'total'     => $totalRecords,
-            'verified'  => $verifiedCount,
-            'missing'   => $missingEvidenceCount,
+            'total' => $totalRecords,
+            'verified' => $verifiedCount,
+            'missing' => $missingEvidenceCount,
+            'missing_evidence' => $missingEvidenceCount,
+            'missing_reference' => $missingReferenceCount,
+            'missing_any' => $missingAnyDocumentCount,
+            'fully_documented' => $fullyDocumentedCount,
             'customers' => $activeCustomersCount,
         ];
 
@@ -100,16 +131,26 @@ class ClearanceGridController extends Controller
         UpdateClearanceRecordAction $action,
         \App\Services\Storage\DocumentStorageService $storageService
     ): RedirectResponse {
-        $record = CustomerClearanceData::findOrFail($id);
-        $action->execute($record, $request->all());
+        // Wrap in try-catch to protect against 500s and gracefully return with input and informative error banner
+        try {
+            $record = CustomerClearanceData::findOrFail($id);
+            $action->execute($record, $request->all());
 
-        $uploadHistory = $storageService->getUploadHistory();
-        $redirect = redirect()->route('clearance.show', $record->id)->with('success', "Clearance record {$record->job_no} updated successfully.");
-        if (!empty($uploadHistory)) {
-            $redirect->with('upload_debug', $uploadHistory);
+            $uploadHistory = $storageService->getUploadHistory();
+            // $redirect = redirect()->route('clearance.edit', $record->id)->with('success', "Clearance record {$record->job_no} updated successfully. Information is up to date.");
+            //Redirect to clearance.show (/clearance/{id}) after successful update so user returns to the detail view.
+            $redirect = redirect()->route('clearance.show', $record->id)->with('success', "Clearance record {$record->job_no} updated successfully.");
+            if (!empty($uploadHistory)) {
+                $redirect->with('upload_debug', $uploadHistory);
+            }
+
+            return $redirect;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("ClearanceGridController: Record {$id} update failed: " . $e->getMessage(), [
+                'exception' => $e,
+            ]);
+            return back()->withInput()->with('error', 'Update failed: ' . $e->getMessage());
         }
-
-        return $redirect;
     }
 
     public function downloadDocument(
@@ -141,7 +182,14 @@ class ClearanceGridController extends Controller
         $cleanFileName = basename($filePath);
         $cleanFileName = preg_replace('/^(?:CCD\d{4}-\d{4}_(?:reference_file_\d|rf\d|hs_evidence_file_\d|hs\d)_)+/', '', $cleanFileName);
 
-        return $storageService->download($filePath, $cleanFileName);
+        // Wrap in try-catch — if S3 throws (503 from download()) convert to redirect
+        // with error rather than letting the exception surface as a 500.
+        try {
+            return $storageService->download($filePath, $cleanFileName);
+        } catch (\Throwable $e) {
+            Log::warning("ClearanceGridController: downloadDocument failed [{$filePath}]: " . $e->getMessage());
+            return back()->withErrors(['download' => 'File download failed. Please try again later.']);
+        }
     }
 
     // Delete a clearance record and redirect back to the index list.
@@ -187,6 +235,46 @@ class ClearanceGridController extends Controller
         return redirect($viewUrl);
     }
 
+    // Delete an attached reference or HS evidence file from a clearance record and S3 storage
+    public function deleteDocument(
+        int $id,
+        string $field,
+        DocumentStorageService $storageService
+    ): RedirectResponse {
+        $allowedFields = [
+            'reference_file_1' => 'Catalog, SDS etc. 1',
+            'reference_file_2' => 'Catalog, SDS etc. 2',
+            'hs_evidence_file_1' => 'Signed Requisition Form',
+            'hs_evidence_file_2' => 'Email Evidence',
+            'hs_evidence_file_3' => 'Advance Ruling',
+            'hs_evidence_file_4' => 'Customs Reference',
+        ];
+
+        if (!array_key_exists($field, $allowedFields)) {
+            abort(404, 'Invalid attachment field.');
+        }
+
+        $record = CustomerClearanceData::findOrFail($id);
+        $filePath = $record->{$field};
+
+        if (!empty($filePath)) {
+            // Defensive try-catch around S3 storage deletion
+            try {
+                $storageService->delete($filePath);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("ClearanceGridController: deleteDocument S3 warning: " . $e->getMessage());
+            }
+
+            $record->{$field} = null;
+            $record->update_date = date('Y-m-d');
+            $record->save();
+
+            return back()->with('success', "File for \"{$allowedFields[$field]}\" has been deleted successfully.");
+        }
+
+        return back()->with('error', "No file currently attached to \"{$allowedFields[$field]}\".");
+    }
+
     public function updateAnnouncement(Request $request, AnnouncementService $announcementService): RedirectResponse
     {
         $user = auth()->user();
@@ -197,9 +285,9 @@ class ClearanceGridController extends Controller
         }
 
         $data = $request->validate([
-            'title'     => 'required|string|max:150',
-            'message'   => 'required|string|max:1000',
-            'type'      => 'nullable|string|in:info,warning,success,danger',
+            'title' => 'required|string|max:150',
+            'message' => 'required|string|max:1000',
+            'type' => 'nullable|string|in:info,warning,success,danger',
             'is_active' => 'nullable',
         ]);
 

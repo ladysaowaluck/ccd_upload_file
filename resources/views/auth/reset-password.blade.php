@@ -17,11 +17,11 @@
             </p>
         </div>
 
-        <!-- @if ($errors->any())
+        @if ($errors->any())
             <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
                 {{ $errors->first() }}
             </div>
-        @endif -->
+        @endif
 
         <form method="POST" action="{{ route('password.reset.submit') }}" class="space-y-4">
             @csrf

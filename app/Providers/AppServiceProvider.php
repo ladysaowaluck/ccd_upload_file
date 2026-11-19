@@ -14,6 +14,17 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Ensure laravel-exceptions-renderer view namespace is always loaded in console commands.
+        // In Laravel 11, when APP_DEBUG=false, FoundationServiceProvider skips loading this namespace,
+        // causing `php artisan optimize` / `view:cache` to crash with:
+        // "Unable to locate a class or view for component [laravel-exceptions-renderer::syntax-highlight]".
+        if ($this->app->runningInConsole()) {
+            $rendererPath = base_path('vendor/laravel/framework/src/Illuminate/Foundation/resources/exceptions/renderer');
+            if (is_dir($rendererPath)) {
+                $this->loadViewsFrom($rendererPath, 'laravel-exceptions-renderer');
+            }
+        }
+
         // Force HTTPS in production or when running behind an SSL-terminating reverse proxy / load balancer
         if (app()->environment('production') || request()->header('X-Forwarded-Proto') === 'https') {
             URL::forceScheme('https');

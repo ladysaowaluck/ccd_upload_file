@@ -18,7 +18,7 @@ class CreateClearanceRecordAction
     }
 
     // Create a new clearance record with uploaded files and customer metadata.
-     
+
     public function execute(array $data): CustomerClearanceData
     {
         // Resolve customer name from master customer ID if not provided
@@ -75,6 +75,12 @@ class CreateClearanceRecordAction
         }
         if (isset($data['country_of_origin'])) {
             $data['country_of_origin'] = substr(trim((string) $data['country_of_origin']), 0, 30);
+        }
+        // Normalize product_year to integer or null for defensive persistence.
+        if (array_key_exists('product_year', $data)) {
+            $data['product_year'] = (isset($data['product_year']) && is_numeric($data['product_year']))
+                ? (int) $data['product_year']
+                : null;
         }
 
         if (isset($data['usage']) && !isset($data['usages'])) {
