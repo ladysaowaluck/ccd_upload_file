@@ -20,7 +20,7 @@
         <p class="text-sm text-slate-500 mt-1">Update customer details or toggle active status.</p>
     </div>
 
-    @if($errors->any())
+    <!-- @if($errors->any())
         <div class="px-4 py-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700">
             <ul class="list-disc list-inside space-y-1">
                 @foreach($errors->all() as $error)
@@ -28,7 +28,7 @@
                 @endforeach
             </ul>
         </div>
-    @endif
+    @endif -->
 
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
         <form method="POST" action="{{ route('admin.master.customers.update', $customer->id) }}" class="space-y-5">

@@ -407,7 +407,9 @@
                         <div class="flex items-center gap-4">
                             <div class="w-52 shrink-0 text-xs font-semibold text-slate-700">Name of License {{ $ln }}</div>
                             <div class="flex-1 text-xs text-slate-800 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                                {{ $lic ? ($lic->license_en ?? $lic->license_th) : '—' }}</div>
+                                <!-- {{ $lic ? ($lic->license_en ?? $lic->license_th) : '—' }}</div> -->
+                                {{ $lic ? "{$lic->license_th} - {$lic->license_en}" : '—' }}
+                            </div>
                         </div>
 
                         <div class="flex items-center gap-4">

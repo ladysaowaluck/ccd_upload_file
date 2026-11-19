@@ -257,4 +257,115 @@ class ReadOnlyRoleAuthorizationTest extends TestCase
             $this->actingAs($standardUser)->delete('/clearance/' . $record->id)->assertStatus(403);
         }
     }
+
+    // Test that power user can create, read, update, delete master data but cannot access user management
+    public function test_power_user_can_manage_master_data_but_cannot_access_user_management(): void
+    {
+        $powerRole = AdminRole::whereIn('slug', ['power_user', 'powerUser'])->first();
+        if (!$powerRole) {
+            $powerRole = AdminRole::create([
+                'slug' => 'power_user',
+                'name' => 'Power User',
+            ]);
+        }
+
+        $powerUser = AdminUser::create([
+            'username' => 'power_' . Str::random(8),
+            'name' => 'Power User Tester',
+            'email' => 'power_' . Str::random(8) . '@th.nissin-asia.com',
+            'password' => Hash::make('Secret123!'),
+            'email_verified_at' => now(),
+        ]);
+        $powerUser->roles()->attach($powerRole->id);
+        $powerUser->load('roles');
+
+        $this->assertTrue($powerUser->isPowerUser());
+        $this->assertTrue($powerUser->canManageMasterData());
+        $this->assertFalse($powerUser->isAdmin());
+
+        // 1. Can READ all master data screens
+        $this->actingAs($powerUser)->get('/admin/master/customers')->assertStatus(200);
+        $this->actingAs($powerUser)->get('/admin/master/branches')->assertStatus(200);
+        $this->actingAs($powerUser)->get('/admin/master/units')->assertStatus(200);
+        $this->actingAs($powerUser)->get('/admin/master/statistics')->assertStatus(200);
+        $this->actingAs($powerUser)->get('/admin/master/licenses')->assertStatus(200);
+
+        // 2. Can CREATE, UPDATE, DELETE on master data (e.g. Branch)
+        $branchCode = 'T' . strtoupper(Str::random(3));
+        $createRes = $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)
+            ->actingAs($powerUser)
+            ->post('/admin/master/branches', [
+                'branch_code' => $branchCode,
+                'branch_name' => 'Test Branch Power',
+            ]);
+        $createRes->assertStatus(302);
+
+        $branch = MasterBranch::where('branch_code', $branchCode)->first();
+        $this->assertNotNull($branch);
+
+        $updateRes = $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)
+            ->actingAs($powerUser)
+            ->put('/admin/master/branches/' . $branch->id, [
+                'branch_code' => $branchCode,
+                'branch_name' => 'Test Branch Power Updated',
+            ]);
+        $updateRes->assertStatus(302);
+
+        $delRes = $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)
+            ->actingAs($powerUser)
+            ->delete('/admin/master/branches/' . $branch->id);
+        $delRes->assertStatus(302);
+
+        // 3. CANNOT access User Management (Admin only)
+        $this->actingAs($powerUser)->get('/admin/users')->assertStatus(403);
+    }
+
+    // Verify updating clearance record with tariff_specific_rate_unit and legacy tariff_specific_rate_unit_id does not throw SQL 1054 unknown column error
+    public function test_clearance_update_with_tariff_specific_rate_unit_persists_without_sql_error(): void
+    {
+        $branch = MasterBranch::first();
+        $customer = MasterCustomer::where('is_enable', 0)->first();
+
+        $record = CustomerClearanceData::create([
+            'job_no' => 'CCD2611-TARIFFTEST',
+            'master_customer_id' => $customer->id,
+            'customer_name' => $customer->company_name,
+            'master_branch_id' => $branch->id,
+            'imp_exp' => 0,
+            'product_description_en' => 'Tariff test product',
+            'product_description_th' => 'คำอธิบายภาษี',
+            'hs_code' => '84713000',
+            'statistic_code_id' => '001',
+            'tariff_specific_rate_unit' => 'KGM',
+            'create_date' => date('Y-m-d'),
+            'update_date' => date('Y-m-d'),
+            'edit_user_id' => 1,
+        ]);
+
+        $response = $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)
+            ->actingAs($this->adminUser)
+            ->from("/clearance/{$record->id}/edit")
+            ->put("/clearance/{$record->id}", [
+                'job_no' => $record->job_no,
+                'master_customer_id' => $customer->id,
+                'master_branch_id' => $branch->id,
+                'imp_exp' => 0,
+                'product_description_en' => 'Tariff test product updated',
+                'product_description_th' => 'คำอธิบายภาษี',
+                'hs_code' => '84713000',
+                'statistic_code_id' => 1,
+                'tariff_specific_rate_unit' => 'LTR',
+                'tariff_specific_rate_unit_id' => 'LTR',
+            ]);
+
+        $response->assertStatus(302);
+        $response->assertRedirect(route('clearance.show', $record->id));
+        $response->assertSessionHas('success');
+
+        $record->refresh();
+        $this->assertEquals('LTR', $record->tariff_specific_rate_unit);
+
+        // Cleanup
+        $record->delete();
+    }
 }

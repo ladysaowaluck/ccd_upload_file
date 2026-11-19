@@ -8,6 +8,7 @@ use App\Models\Business\MasterBranch;
 use App\Models\Business\MasterLicense;
 use App\Models\Business\MasterStatistic;
 use App\Models\Business\MasterUnit;
+use App\Support\Database\MasterDataUniqueFields;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -37,12 +38,21 @@ class MasterDataController extends Controller
 
     public function storeBranch(Request $request): RedirectResponse
     {
+        // Ignore the current record so an unchanged branch_code can be saved.
         $data = $request->validate([
-            'branch_code' => 'required|string|max:5|unique:mysql.master_branches,branch_code',
+            // 'branch_code' => 'required|string|max:5|unique:mysql.master_branches,branch_code',
+            'branch_code' => ['required', 'string', 'max:5', MasterDataUniqueFields::rule('branch_code')],
             'branch_name' => 'required|string|max:100',
-        ]);
+        ], MasterDataUniqueFields::messages());
 
+        // MasterBranch::create([
+        //     'branch_code' => strtoupper(trim($data['branch_code'])),
+        //     'branch_name' => trim($data['branch_name']),
+        // ]);
+        // Calculate next id value defensively before creating master branch
+        $nextId = ((int) MasterBranch::max('id')) + 1;
         MasterBranch::create([
+            'id' => $nextId,
             'branch_code' => strtoupper(trim($data['branch_code'])),
             'branch_name' => trim($data['branch_name']),
         ]);
@@ -55,10 +65,12 @@ class MasterDataController extends Controller
     {
         $branch = MasterBranch::findOrFail($id);
 
+        // Ignore the current record so an unchanged branch_code can be saved.
         $data = $request->validate([
-            'branch_code' => 'required|string|max:5|unique:mysql.master_branches,branch_code,' . $branch->id,
+            // 'branch_code' => 'required|string|max:5|unique:mysql.master_branches,branch_code,' . $branch->id,
+            'branch_code' => ['required', 'string', 'max:5', MasterDataUniqueFields::rule('branch_code', $branch->id)],
             'branch_name' => 'required|string|max:100',
-        ]);
+        ], MasterDataUniqueFields::messages());
 
         $branch->update([
             'branch_code' => strtoupper(trim($data['branch_code'])),
@@ -106,9 +118,11 @@ class MasterDataController extends Controller
 
     public function storeUnit(Request $request): RedirectResponse
     {
+        // Ignore the current record so an unchanged unit can be saved.
         $data = $request->validate([
-            'unit' => 'required|string|max:3|unique:mysql.master_units,unit',
-        ]);
+            // 'unit' => 'required|string|max:3|unique:mysql.master_units,unit',
+            'unit' => ['required', 'string', 'max:3', MasterDataUniqueFields::rule('unit')],
+        ], MasterDataUniqueFields::messages());
 
         $unitCode = strtoupper(trim($data['unit']));
         MasterUnit::create([
@@ -123,9 +137,11 @@ class MasterDataController extends Controller
     {
         $unit = MasterUnit::findOrFail($id);
 
+        // Ignore the current record so an unchanged unit can be saved.
         $data = $request->validate([
-            'unit' => 'required|string|max:3|unique:mysql.master_units,unit,' . $unit->id,
-        ]);
+            // 'unit' => 'required|string|max:3|unique:mysql.master_units,unit,' . $unit->id,
+            'unit' => ['required', 'string', 'max:3', MasterDataUniqueFields::rule('unit', $unit->id)],
+        ], MasterDataUniqueFields::messages());
 
         $unitCode = strtoupper(trim($data['unit']));
         $unit->update([
@@ -175,9 +191,11 @@ class MasterDataController extends Controller
 
     public function storeStatistic(Request $request): RedirectResponse
     {
+        // Ignore the current record so an unchanged statistic code can be saved.
         $data = $request->validate([
-            'statistics' => 'required|string|max:3|unique:mysql.master_statistics,statistics',
-        ]);
+            // 'statistics' => 'required|string|max:3|unique:mysql.master_statistics,statistics',
+            'statistics' => ['required', 'string', 'max:3', MasterDataUniqueFields::rule('statistics')],
+        ], MasterDataUniqueFields::messages());
 
         $statCode = trim($data['statistics']);
         MasterStatistic::create([
@@ -192,9 +210,11 @@ class MasterDataController extends Controller
     {
         $stat = MasterStatistic::findOrFail($id);
 
+        // Ignore the current record so an unchanged statistic code can be saved.
         $data = $request->validate([
-            'statistics' => 'required|string|max:3|unique:mysql.master_statistics,statistics,' . $stat->id,
-        ]);
+            // 'statistics' => 'required|string|max:3|unique:mysql.master_statistics,statistics,' . $stat->id,
+            'statistics' => ['required', 'string', 'max:3', MasterDataUniqueFields::rule('statistics', $stat->id)],
+        ], MasterDataUniqueFields::messages());
 
         $statCode = trim($data['statistics']);
         $stat->update([
@@ -236,7 +256,7 @@ class MasterDataController extends Controller
             $search = '%' . trim((string) $request->input('search')) . '%';
             $query->where(function ($q) use ($search) {
                 $q->where('license_en', 'LIKE', $search)
-                  ->orWhere('license_th', 'LIKE', $search);
+                    ->orWhere('license_th', 'LIKE', $search);
             });
         }
 
@@ -247,10 +267,15 @@ class MasterDataController extends Controller
 
     public function storeLicense(Request $request): RedirectResponse
     {
+        // Added unique validation for license_en and license_th (both are UNIQUE in DB).
+        // Previously missing unique rules caused a 500 on duplicate insert.
+        // Both license_en and license_th are UNIQUE in the DB; shared rules/messages.
         $data = $request->validate([
-            'license_en' => 'required|string|max:191',
-            'license_th' => 'nullable|string|max:191',
-        ]);
+            // 'license_en' => 'required|string|max:191|unique:mysql.master_licenses,license_en',
+            // 'license_th' => 'nullable|string|max:191|unique:mysql.master_licenses,license_th',
+            'license_en' => ['required', 'string', 'max:191', MasterDataUniqueFields::rule('license_en')],
+            'license_th' => ['nullable', 'string', 'max:191', MasterDataUniqueFields::rule('license_th')],
+        ], MasterDataUniqueFields::messages());
 
         MasterLicense::create([
             'license_en' => trim($data['license_en']),
@@ -265,10 +290,14 @@ class MasterDataController extends Controller
     {
         $license = MasterLicense::findOrFail($id);
 
+        // Added unique validation with ignore-self for license_en and license_th.
+        // Excludes the current record so updating without changing values does not fail.
         $data = $request->validate([
-            'license_en' => 'required|string|max:191',
-            'license_th' => 'nullable|string|max:191',
-        ]);
+            // 'license_en' => 'required|string|max:191',
+            // 'license_th' => 'nullable|string|max:191',
+            'license_en' => ['required', 'string', 'max:191', MasterDataUniqueFields::rule('license_en', $license->id)],
+            'license_th' => ['nullable', 'string', 'max:191', MasterDataUniqueFields::rule('license_th', $license->id)],
+        ], MasterDataUniqueFields::messages());
 
         $license->update([
             'license_en' => trim($data['license_en']),

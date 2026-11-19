@@ -43,7 +43,7 @@
     </div>
 
     <!-- Flash Messages -->
-    @if(session('success'))
+    <!-- @if(session('success'))
         <div class="px-4 py-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
             {{ session('success') }}
         </div>
@@ -61,7 +61,7 @@
                 @endforeach
             </ul>
         </div>
-    @endif
+    @endif -->
 
     <!-- Filter Card -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
@@ -153,12 +153,15 @@
         <h3 class="text-sm font-bold text-slate-800 mb-4">New Customs License</h3>
         <form method="POST" action="{{ route('admin.master.licenses.store') }}" class="space-y-4">
             @csrf
+            <input type="hidden" name="_form" value="createLicenseModal">
 
             <div class="flex items-center gap-4">
                 <label class="w-28 shrink-0 text-xs font-semibold text-slate-700">License (EN) <span class="text-rose-500">*</span></label>
                 <div class="flex-1">
                     <input type="text" name="license_en" required maxlength="191" placeholder="e.g. Hazardous Substance License"
+                        value="{{ old('_form') === 'createLicenseModal' ? old('license_en') : '' }}"
                         class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <x-form-error field="license_en" form="createLicenseModal" />
                 </div>
             </div>
 
@@ -166,7 +169,9 @@
                 <label class="w-28 shrink-0 text-xs font-semibold text-slate-700">License (TH)</label>
                 <div class="flex-1">
                     <input type="text" name="license_th" maxlength="191" placeholder="e.g. ใบอนุญาตนำเข้าวัตถุอันตราย"
+                        value="{{ old('_form') === 'createLicenseModal' ? old('license_th') : '' }}"
                         class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <x-form-error field="license_th" form="createLicenseModal" />
                 </div>
             </div>
 
@@ -188,20 +193,25 @@
         <form method="POST" action="{{ route('admin.master.licenses.update', $license->id) }}" class="space-y-4">
             @csrf
             @method('PUT')
+            <input type="hidden" name="_form" value="editLicenseModal{{ $license->id }}">
 
             <div class="flex items-center gap-4">
                 <label class="w-28 shrink-0 text-xs font-semibold text-slate-700">License (EN) <span class="text-rose-500">*</span></label>
                 <div class="flex-1">
-                    <input type="text" name="license_en" value="{{ old('license_en', $license->license_en) }}" required maxlength="191"
+                    <!-- <input type="text" name="license_en" value="{{ old('license_en', $license->license_en) }}" required maxlength="191" -->
+                    <input type="text" name="license_en" value="{{ old('_form') === 'editLicenseModal' . $license->id ? old('license_en') : $license->license_en }}" required maxlength="191"
                         class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <x-form-error field="license_en" form="editLicenseModal{{ $license->id }}" />
                 </div>
             </div>
 
             <div class="flex items-center gap-4">
                 <label class="w-28 shrink-0 text-xs font-semibold text-slate-700">License (TH)</label>
                 <div class="flex-1">
-                    <input type="text" name="license_th" value="{{ old('license_th', $license->license_th) }}" maxlength="191"
+                    {{-- <input type="text" name="license_th" value="{{ old('license_th', $license->license_th) }}" maxlength="191" --}}
+                    <input type="text" name="license_th" value="{{ old('_form') === 'editLicenseModal' . $license->id ? old('license_th') : $license->license_th }}" maxlength="191"
                         class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <x-form-error field="license_th" form="editLicenseModal{{ $license->id }}" />
                 </div>
             </div>
 
@@ -215,5 +225,7 @@
     </div>
 </div>
 @endforeach
+
+<x-reopen-modal-on-error />
 
 @endsection

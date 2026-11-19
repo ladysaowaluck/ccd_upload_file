@@ -480,7 +480,8 @@
                                     <option value="">— None —</option>
                                     @foreach($licenses as $lic)
                                         <option value="{{ $lic->id }}" {{ old('license' . $ln . '_name_id', $record->{'license' . $ln . '_name_id'}) == $lic->id ? 'selected' : '' }}>
-                                            {{ $lic->license_en ?? $lic->license_th }}
+                                            <!-- {{ $lic->license_en ?? $lic->license_th }} -->
+                                            {{ $lic->license_th }}  -  {{ $lic->license_en }}
                                         </option>
                                     @endforeach
                                 </select>

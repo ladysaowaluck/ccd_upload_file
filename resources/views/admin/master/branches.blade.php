@@ -48,7 +48,7 @@
     </div>
 
      <!-- Flash Messages -->
-    @if(session('success'))
+    <!-- @if(session('success'))
         <div class="px-4 py-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
             {{ session('success') }}
         </div>
@@ -66,7 +66,7 @@
                 @endforeach
             </ul>
         </div>
-    @endif
+    @endif -->
 
     <!-- Filter Card -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
@@ -161,12 +161,15 @@
         <h3 class="text-sm font-bold text-slate-800 mb-4">New Branch</h3>
         <form method="POST" action="{{ route('admin.master.branches.store') }}" class="space-y-4">
             @csrf
+            <input type="hidden" name="_form" value="createBranchModal">
 
             <div class="flex items-center gap-4">
                 <label class="w-28 shrink-0 text-xs font-semibold text-slate-700">Branch Code <span class="text-rose-500">*</span></label>
                 <div class="flex-1">
                     <input type="text" name="branch_code" required maxlength="5" placeholder="e.g. BKK"
+                        value="{{ old('_form') === 'createBranchModal' ? old('branch_code') : '' }}"
                         class="w-full text-xs font-mono uppercase rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <x-form-error field="branch_code" form="createBranchModal" />
                     <span class="text-[10px] text-slate-400 mt-0.5 block">Max 5 characters</span>
                 </div>
             </div>
@@ -175,7 +178,9 @@
                 <label class="w-28 shrink-0 text-xs font-semibold text-slate-700">Branch Name <span class="text-rose-500">*</span></label>
                 <div class="flex-1">
                     <input type="text" name="branch_name" required maxlength="100" placeholder="e.g. Bangkok Main Office"
+                        value="{{ old('_form') === 'createBranchModal' ? old('branch_name') : '' }}"
                         class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <x-form-error field="branch_name" form="createBranchModal" />
                 </div>
             </div>
 
@@ -197,12 +202,14 @@
         <form method="POST" action="{{ route('admin.master.branches.update', $branch->id) }}" class="space-y-4">
             @csrf
             @method('PUT')
+            <input type="hidden" name="_form" value="editBranchModal{{ $branch->id }}">
 
             <div class="flex items-center gap-4">
                 <label class="w-28 shrink-0 text-xs font-semibold text-slate-700">Branch Code <span class="text-rose-500">*</span></label>
                 <div class="flex-1">
-                    <input type="text" name="branch_code" value="{{ old('branch_code', $branch->branch_code) }}" required maxlength="5"
+                    <input type="text" name="branch_code" value="{{ old('_form') === 'editBranchModal' . $branch->id ? old('branch_code') : $branch->branch_code }}" required maxlength="5"
                         class="w-full text-xs font-mono uppercase rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <x-form-error field="branch_code" form="editBranchModal{{ $branch->id }}" />
                     <span class="text-[10px] text-slate-400 mt-0.5 block">Max 5 characters</span>
                 </div>
             </div>
@@ -210,8 +217,10 @@
             <div class="flex items-center gap-4">
                 <label class="w-28 shrink-0 text-xs font-semibold text-slate-700">Branch Name <span class="text-rose-500">*</span></label>
                 <div class="flex-1">
-                    <input type="text" name="branch_name" value="{{ old('branch_name', $branch->branch_name) }}" required maxlength="100"
+                    {{-- <input type="text" name="branch_name" value="{{ old('branch_name', $branch->branch_name) }}" required maxlength="100" --}}
+                    <input type="text" name="branch_name" value="{{ old('_form') === 'editBranchModal' . $branch->id ? old('branch_name') : $branch->branch_name }}" required maxlength="100"
                         class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <x-form-error field="branch_name" form="editBranchModal{{ $branch->id }}" />
                 </div>
             </div>
 
@@ -225,5 +234,7 @@
     </div>
 </div>
 @endforeach
+
+<x-reopen-modal-on-error />
 
 @endsection

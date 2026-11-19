@@ -43,7 +43,7 @@
     </div>
 
     <!-- Flash Messages -->
-    @if(session('success'))
+    <!-- @if(session('success'))
         <div class="px-4 py-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
             {{ session('success') }}
         </div>
@@ -61,7 +61,7 @@
                 @endforeach
             </ul>
         </div>
-    @endif
+    @endif -->
 
     <!-- Filter Card -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
@@ -151,11 +151,14 @@
         <h3 class="text-sm font-bold text-slate-800 mb-4">New Quantity Unit</h3>
         <form method="POST" action="{{ route('admin.master.units.store') }}" class="space-y-4">
             @csrf
+            <input type="hidden" name="_form" value="createUnitModal">
 
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Code <span class="text-rose-500">*</span></label>
                 <input type="text" name="unit" required maxlength="3" placeholder="e.g. C62, KGM"
+                    value="{{ old('_form') === 'createUnitModal' ? old('unit') : '' }}"
                     class="w-full text-xs font-mono uppercase rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <x-form-error field="unit" form="createUnitModal" />
                 <span class="text-[10px] text-slate-400 mt-1 block">Standard 3-character customs unit symbol</span>
             </div>
 
@@ -177,11 +180,15 @@
         <form method="POST" action="{{ route('admin.master.units.update', $unit->id) }}" class="space-y-4">
             @csrf
             @method('PUT')
+            <!-- "_form" identifies the submitted modal so errors/old values are shown only there. -->
+            <input type="hidden" name="_form" value="editUnitModal{{ $unit->id }}">
 
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Code <span class="text-rose-500">*</span></label>
-                <input type="text" name="unit" value="{{ old('unit', $unit->unit) }}" required maxlength="3"
+                <!-- <input type="text" name="unit" value="{{ old('unit', $unit->unit) }}" required maxlength="3" -->
+                <input type="text" name="unit" value="{{ old('_form') === 'editUnitModal' . $unit->id ? old('unit') : $unit->unit }}" required maxlength="3"
                     class="w-full text-xs font-mono uppercase rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <x-form-error field="unit" form="editUnitModal{{ $unit->id }}" />
                 <span class="text-[10px] text-slate-400 mt-1 block">Standard 3-character customs unit symbol</span>
             </div>
 
@@ -195,5 +202,7 @@
     </div>
 </div>
 @endforeach
+
+<x-reopen-modal-on-error />
 
 @endsection

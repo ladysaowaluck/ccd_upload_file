@@ -48,7 +48,7 @@
     </div>
 
     <!-- Flash Messages -->
-    @if(session('success'))
+    <!-- @if(session('success'))
         <div class="px-4 py-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
             {{ session('success') }}
         </div>
@@ -66,7 +66,7 @@
                 @endforeach
             </ul>
         </div>
-    @endif
+    @endif -->
 
     <!-- Filter Card -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
@@ -184,12 +184,16 @@
         <h3 class="text-sm font-bold text-slate-800 mb-4">New Customer</h3>
         <form method="POST" action="{{ route('admin.master.customers.store') }}" class="space-y-4">
             @csrf
+            <!-- "_form" identifies the submitted modal so errors/old values are shown only there. -->
+            <input type="hidden" name="_form" value="createModal">
 
             <div class="flex items-center gap-4">
                 <label class="w-28 shrink-0 text-xs font-semibold text-slate-700">Company Name <span class="text-rose-500">*</span></label>
                 <div class="flex-1">
                     <input type="text" name="company_name" required placeholder="Full company name"
+                        value="{{ old('_form') === 'createModal' ? old('company_name') : '' }}"
                         class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <x-form-error field="company_name" form="createModal" />
                 </div>
             </div>
 
@@ -197,7 +201,9 @@
                 <label class="w-28 shrink-0 text-xs font-semibold text-slate-700">Tax ID</label>
                 <div class="flex-1">
                     <input type="text" name="tax_id" placeholder="13-digit Tax ID"
+                        value="{{ old('_form') === 'createModal' ? old('tax_id') : '' }}"
                         class="w-full text-xs font-mono rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <x-form-error field="tax_id" form="createModal" />
                 </div>
             </div>
 
@@ -205,8 +211,10 @@
                 <label class="w-28 shrink-0 text-xs font-semibold text-slate-700">Status <span class="text-rose-500">*</span></label>
                 <div class="flex-1">
                     <select name="is_enable" required class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        {{-- <option value="0">Enabled (Active)</option> --}}
+                        {{-- <option value="1">Disabled</option> --}}
                         <option value="0">Enabled (Active)</option>
-                        <option value="1">Disabled</option>
+                        <option value="1" {{ old('_form') === 'createModal' && old('is_enable') === '1' ? 'selected' : '' }}>Disabled</option>
                     </select>
                 </div>
             </div>
@@ -220,4 +228,6 @@
         </form>
     </div>
 </div>
+
+<x-reopen-modal-on-error />
 @endsection

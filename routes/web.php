@@ -158,7 +158,9 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/customers/{id}', [MasterCustomerController::class, 'destroy'])->name('admin.customers.destroy')->where('id', '[0-9]+');
     });
     */
-    Route::middleware(['role:administrator'])->prefix('admin')->group(function () {
+    // Route::middleware(['role:administrator'])->prefix('admin')->group(function () {
+    // Allow 'power user' (supporting power_user and powerUser slugs) and administrator to create, read, update, delete master data (Customer, Branches, Units, Statistical codes, Licenses).
+    Route::middleware(['role:administrator,power_user,powerUser'])->prefix('admin')->group(function () {
         // Master Data Routes (Customers moved to /admin/master/customers + full CRUD for all master resources)
         Route::prefix('master')->group(function () {
             // Master Customers
@@ -196,7 +198,10 @@ Route::middleware(['auth'])->group(function () {
 
         // Redirect old /admin/customers to /admin/master/customers for backwards compatibility
         Route::redirect('/customers', '/admin/master/customers')->name('admin.customers.index');
-
+    });
+    // Route::middleware(['role:administrator'])->prefix('admin')->group(function () {
+    // User management is restricted strictly to administrator only
+    Route::middleware(['role:administrator'])->prefix('admin')->group(function () {
         Route::get('/users', [AdminUserController::class, 'index'])->name('admin.users.index');
         Route::get('/users/{id}', [AdminUserController::class, 'show'])->name('admin.users.show')->where('id', '[0-9]+');
         Route::put('/users/{id}/roles', [AdminUserController::class, 'updateRoles'])->name('admin.users.roles.update')->where('id', '[0-9]+');

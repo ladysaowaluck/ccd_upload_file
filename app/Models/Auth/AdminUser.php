@@ -108,7 +108,19 @@ class AdminUser extends Authenticatable implements MustVerifyEmail
 
     public function hasElevatedRole(): bool
     {
-        return $this->isAdmin() || $this->hasRole('staff') || $this->hasRole('power_user');
+        return $this->isAdmin() || $this->hasRole('staff') || $this->hasRole('power_user') || $this->hasRole('powerUser');
+    }
+
+    // Power user detection supporting both 'power_user' and 'powerUser' role slugs from database
+    public function isPowerUser(): bool
+    {
+        return $this->hasRole('power_user') || $this->hasRole('powerUser');
+    }
+
+    // Determine if user can manage master data (Customer, Branches, Units, Statistics, Licenses)
+    public function canManageMasterData(): bool
+    {
+        return $this->isAdmin() || $this->isPowerUser();
     }
 
     public function isStandard(): bool

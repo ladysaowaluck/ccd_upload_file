@@ -354,6 +354,7 @@ class ClearanceSystemTest extends TestCase
         $record->delete();
     }
 
+
     //  Test that DELETE /clearance/{id}/file/{field} removes the file from record and clears the slot
     public function test_clearance_delete_document_clears_field_and_redirects(): void
     {
@@ -393,6 +394,7 @@ class ClearanceSystemTest extends TestCase
         // Cleanup
         $record->delete();
     }
+
 
     // GAP-05 — Test that updating a clearance record persists changes and redirects to show view
     public function test_clearance_update_modifies_record_and_redirects(): void
@@ -448,6 +450,7 @@ class ClearanceSystemTest extends TestCase
         $record->delete();
     }
 
+
     // Test that updating a record displays the in-page "Up to Date" notification banner upon redirection to show view
     public function test_clearance_update_displays_up_to_date_notification_banner(): void
     {
@@ -495,6 +498,7 @@ class ClearanceSystemTest extends TestCase
         // Cleanup
         $record->delete();
     }
+
 
     // Test that attaching a file on update does not throw HTTP 500 even when replacing prior files
     public function test_clearance_update_with_attached_file_does_not_throw_500_when_prior_file_exists(): void
@@ -554,6 +558,7 @@ class ClearanceSystemTest extends TestCase
         // Cleanup
         $record->delete();
     }
+
 
     // GAP-06 — Test ClearanceRecordData DTO instantiates and transforms cleanly
     public function test_clearance_record_data_dto_transforms_correctly(): void

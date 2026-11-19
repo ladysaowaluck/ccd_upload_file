@@ -5,7 +5,7 @@
 
 @section('content')
     <!-- Redesigned Home Page with Executive KPIs, Quick Shortcuts, Admin Announcement Board, and Clearance Data
-            Repository -->
+                Repository -->
     <div class="space-y-6">
 
         <!-- Flash Notifications -->
@@ -35,8 +35,8 @@
         @endif
 
         <!-- ══════════════════════════════════════════════════════════
-                SECTION 1: DASHBOARD KPI SUMMARY CARDS
-                ══════════════════════════════════════════════ -->
+                    SECTION 1: DASHBOARD KPI SUMMARY CARDS
+                    ══════════════════════════════════════════════ -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
             <!-- KPI 1: Total Records -->
@@ -143,8 +143,8 @@
         </div>
 
         <!-- ══════════════════════════════════════════════════════════════
-                SECTION 2: ADMIN ANNOUNCEMENT BOARD
-                ════════════════════════════════════════════════════ -->
+                    SECTION 2: ADMIN ANNOUNCEMENT BOARD
+                    ════════════════════════════════════════════════════ -->
         @php
             $typeStyles = [
                 'info' => ['border' => 'border-sky-200', 'bg' => 'bg-sky-50/70', 'badge' => 'bg-sky-100 text-sky-800 border-sky-300', 'icon' => 'text-sky-600'],
@@ -274,7 +274,8 @@
                 @endif
 
                 <!-- Shortcut 5: Master Customer Data (or All Master Data) -->
-                @if(auth()->user() && auth()->user()->isAdmin())
+                <!-- Allow Administrator and Power User to access Master Data shortcut -->
+                @if(auth()->user() && auth()->user()->canManageMasterData())
                     <a href="{{ route('admin.master.customers.index') }}"
                         class="flex flex-col p-4 bg-white rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md transition group">
                         <div
@@ -317,147 +318,147 @@
         </div>
 
         <!-- ══════════════════════════════════════════════════════════
-                SECTION 4: CLEARANCE REPOSITORY (FILTER & TABLE)
-                ══════════════════════════════════════════ -->
+                    SECTION 4: CLEARANCE REPOSITORY (FILTER & TABLE)
+                    ══════════════════════════════════════════ -->
         <!-- <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
 
-                    <div class="p-5 border-b border-slate-200 bg-slate-50/70">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 class="text-sm font-bold text-slate-900">Customs Clearance Repository</h3>
-                                <p class="text-xs text-slate-500 mt-0.5">Search and inspect all customer clearance declarations.</p>
+                        <div class="p-5 border-b border-slate-200 bg-slate-50/70">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900">Customs Clearance Repository</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5">Search and inspect all customer clearance declarations.</p>
+                                </div>
+                                <span
+                                    class="text-xs font-mono font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
+                                    {{ $records->total() }} records found
+                                </span>
                             </div>
-                            <span
-                                class="text-xs font-mono font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
-                                {{ $records->total() }} records found
-                            </span>
+
+                            <form method="GET" action="{{ route('clearance.index') }}"
+                                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Job Number</label>
+                                    <input type="text" name="job_no" value="{{ request('job_no') }}" placeholder="CCD2304-..."
+                                        class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">HS Code</label>
+                                    <input type="text" name="hs_code" value="{{ request('hs_code') }}" placeholder="8-digit code..."
+                                        class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Customer Name</label>
+                                    <input type="text" name="customer_name" value="{{ request('customer_name') }}"
+                                        placeholder="Search client..."
+                                        class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Branch</label>
+                                    <select name="branch_id"
+                                        class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                        <option value="">All Branches</option>
+                                        @foreach($branches as $b)
+                                            <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>
+                                                {{ $b->branch_name }} ({{ $b->branch_code }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="flex items-end space-x-2">
+                                    <button type="submit"
+                                        class="flex-1 bg-brand-700 hover:bg-brand-800 text-white font-semibold py-2 px-4 rounded-lg text-xs transition shadow-sm">
+                                        Search
+                                    </button>
+                                    <a href="{{ route('clearance.index') }}"
+                                        class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2 px-3 rounded-lg text-xs transition">
+                                        Reset
+                                    </a>
+                                </div>
+                            </form>
                         </div>
 
-                        <form method="GET" action="{{ route('clearance.index') }}"
-                            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Job Number</label>
-                                <input type="text" name="job_no" value="{{ request('job_no') }}" placeholder="CCD2304-..."
-                                    class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">HS Code</label>
-                                <input type="text" name="hs_code" value="{{ request('hs_code') }}" placeholder="8-digit code..."
-                                    class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Customer Name</label>
-                                <input type="text" name="customer_name" value="{{ request('customer_name') }}"
-                                    placeholder="Search client..."
-                                    class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Branch</label>
-                                <select name="branch_id"
-                                    class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                                    <option value="">All Branches</option>
-                                    @foreach($branches as $b)
-                                        <option value="{{ $b->id }}" {{ request('branch_id') == $b->id ? 'selected' : '' }}>
-                                            {{ $b->branch_name }} ({{ $b->branch_code }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="flex items-end space-x-2">
-                                <button type="submit"
-                                    class="flex-1 bg-brand-700 hover:bg-brand-800 text-white font-semibold py-2 px-4 rounded-lg text-xs transition shadow-sm">
-                                    Search
-                                </button>
-                                <a href="{{ route('clearance.index') }}"
-                                    class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2 px-3 rounded-lg text-xs transition">
-                                    Reset
-                                </a>
-                            </div>
-                        </form>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 text-xs text-left">
-                            <thead class="bg-slate-100/75 text-slate-700 font-bold uppercase tracking-wider">
-                                <tr>
-                                    <th class="px-4 py-3.5">Job Ref</th>
-                                    <th class="px-4 py-3.5">Customer Name</th>
-                                    <th class="px-4 py-3.5">HS Code</th>
-                                    <th class="px-4 py-3.5">Product Description (EN / TH)</th>
-                                    <th class="px-4 py-3.5">Duty Rate</th>
-                                    <th class="px-4 py-3.5 text-center">Compliance</th>
-                                    <th class="px-4 py-3.5 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-200 bg-white">
-                                @forelse ($records as $item)
-                                    <tr class="hover:bg-slate-50/90 transition">
-                                        <td class="px-4 py-3 font-mono font-semibold text-brand-700 whitespace-nowrap">
-                                            {{ $item->job_no }}
-                                        </td>
-                                        <td class="px-4 py-3 max-w-[200px] truncate text-slate-800 font-medium">
-                                            {{ $item->customer_name }}
-                                        </td>
-                                        <td class="px-4 py-3 font-mono text-slate-900 font-semibold whitespace-nowrap">
-                                            {{ $item->hs_code }}
-                                        </td>
-                                        <td class="px-4 py-3 max-w-sm">
-                                            <div class="text-slate-900 font-medium truncate">{{ $item->product_description_en }}</div>
-                                            <div class="text-[11px] text-slate-500 truncate mt-0.5">{{ $item->product_description_th }}
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-3 text-slate-700 whitespace-nowrap">
-                                            {{ $item->tariff_ad_valorem !== null ? $item->tariff_ad_valorem . '%' : '-' }}
-                                        </td>
-                                        <td class="px-4 py-3 text-center whitespace-nowrap">
-                                            @if($item->isFullyDocumented())
-                                                <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20" title="Both Reference (Catalog/SDS) and HS Evidence files are attached">
-                                                    ✓ Verified (Full)
-                                                </span>
-                                            @elseif($item->isMissingAllDocuments())
-                                                <span class="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-700 ring-1 ring-inset ring-rose-600/20" title="Missing both technical Reference files and HS Evidence">
-                                                    Missing Evidence &amp; Ref
-                                                </span>
-                                            @elseif($item->isMissingEvidence())
-                                                <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-600/20" title="Reference file exists, but HS Evidence is missing">
-                                                    Missing Evidence
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-800 ring-1 ring-inset ring-sky-600/20" title="HS Evidence exists, but Reference file (Catalog/SDS) is missing">
-                                                    Missing Reference
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td class="px-4 py-3 text-right whitespace-nowrap space-x-2">
-                                            <a href="{{ route('clearance.show', $item->id) }}"
-                                                class="inline-block bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-2.5 py-1 rounded text-[11px] font-medium transition">
-                                                View
-                                            </a>
-                                        </td>
-                                    </tr>
-                                @empty
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 text-xs text-left">
+                                <thead class="bg-slate-100/75 text-slate-700 font-bold uppercase tracking-wider">
                                     <tr>
-                                        <td colspan="7" class="px-4 py-12 text-center text-slate-400">
-                                            No clearance records found matching the filter criteria.
-                                        </td>
+                                        <th class="px-4 py-3.5">Job Ref</th>
+                                        <th class="px-4 py-3.5">Customer Name</th>
+                                        <th class="px-4 py-3.5">HS Code</th>
+                                        <th class="px-4 py-3.5">Product Description (EN / TH)</th>
+                                        <th class="px-4 py-3.5">Duty Rate</th>
+                                        <th class="px-4 py-3.5 text-center">Compliance</th>
+                                        <th class="px-4 py-3.5 text-right">Action</th>
                                     </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-
-                    @if($records->hasPages())
-                        <div class="p-4 border-t border-slate-200 bg-slate-50">
-                            {{ $records->links() }}
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 bg-white">
+                                    @forelse ($records as $item)
+                                        <tr class="hover:bg-slate-50/90 transition">
+                                            <td class="px-4 py-3 font-mono font-semibold text-brand-700 whitespace-nowrap">
+                                                {{ $item->job_no }}
+                                            </td>
+                                            <td class="px-4 py-3 max-w-[200px] truncate text-slate-800 font-medium">
+                                                {{ $item->customer_name }}
+                                            </td>
+                                            <td class="px-4 py-3 font-mono text-slate-900 font-semibold whitespace-nowrap">
+                                                {{ $item->hs_code }}
+                                            </td>
+                                            <td class="px-4 py-3 max-w-sm">
+                                                <div class="text-slate-900 font-medium truncate">{{ $item->product_description_en }}</div>
+                                                <div class="text-[11px] text-slate-500 truncate mt-0.5">{{ $item->product_description_th }}
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 text-slate-700 whitespace-nowrap">
+                                                {{ $item->tariff_ad_valorem !== null ? $item->tariff_ad_valorem . '%' : '-' }}
+                                            </td>
+                                            <td class="px-4 py-3 text-center whitespace-nowrap">
+                                                @if($item->isFullyDocumented())
+                                                    <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20" title="Both Reference (Catalog/SDS) and HS Evidence files are attached">
+                                                        ✓ Verified (Full)
+                                                    </span>
+                                                @elseif($item->isMissingAllDocuments())
+                                                    <span class="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-700 ring-1 ring-inset ring-rose-600/20" title="Missing both technical Reference files and HS Evidence">
+                                                        Missing Evidence &amp; Ref
+                                                    </span>
+                                                @elseif($item->isMissingEvidence())
+                                                    <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-600/20" title="Reference file exists, but HS Evidence is missing">
+                                                        Missing Evidence
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-800 ring-1 ring-inset ring-sky-600/20" title="HS Evidence exists, but Reference file (Catalog/SDS) is missing">
+                                                        Missing Reference
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3 text-right whitespace-nowrap space-x-2">
+                                                <a href="{{ route('clearance.show', $item->id) }}"
+                                                    class="inline-block bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-2.5 py-1 rounded text-[11px] font-medium transition">
+                                                    View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="7" class="px-4 py-12 text-center text-slate-400">
+                                                No clearance records found matching the filter criteria.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                         </div>
-                    @endif
-                </div> -->
+
+                        @if($records->hasPages())
+                            <div class="p-4 border-t border-slate-200 bg-slate-50">
+                                {{ $records->links() }}
+                            </div>
+                        @endif
+                    </div> -->
 
     </div>
 
     <!-- ══════════════════════════════════════════════════════════
-            MODAL: EDIT ANNOUNCEMENT (ADMIN ONLY)
-            ══════════════════════════════════════════════════════ -->
+                MODAL: EDIT ANNOUNCEMENT (ADMIN ONLY)
+                ══════════════════════════════════════════════════════ -->
     @if(auth()->user() && auth()->user()->isAdmin())
         <div id="editAnnouncementModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div class="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg mx-4 p-6">

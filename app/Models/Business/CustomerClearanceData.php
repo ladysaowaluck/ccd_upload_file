@@ -41,8 +41,11 @@ class CustomerClearanceData extends Model
         // 'quantity_unit', // compatibility alias
         'privilege_code',
         'tariff_ad_valorem',
+        // Lady : Database table customer_clearance_data column is 'tariff_specific_rate_unit' (varchar 10), not 'tariff_specific_rate_unit_id'.
+        // Keeping 'tariff_specific_rate_unit_id' in $fillable caused SQLSTATE[42S22] unknown column errors during record updates.
         'tariff_specific_rate_unit_id',
-        // 'tariff_specific_rate_unit', // compatibility alias
+        // Map correct schema column tariff_specific_rate_unit to $fillable.
+        // 'tariff_specific_rate_unit',
         'tariff_specific_rate_baht',
         'anti_dumping_ad_valorem',
         'excise_tax_ad_valorem',
@@ -197,6 +200,17 @@ class CustomerClearanceData extends Model
     public function getQuantityUnitAttribute(): ?string
     {
         return $this->attributes['quantity_unit'] ?? $this->quantityUnit?->unit ?? null;
+    }
+
+    // Provide backward-compatibility accessor/mutator for tariff_specific_rate_unit_id pointing to actual column tariff_specific_rate_unit
+    public function getTariffSpecificRateUnitIdAttribute(): ?string
+    {
+        return $this->attributes['tariff_specific_rate_unit'] ?? null;
+    }
+
+    public function setTariffSpecificRateUnitIdAttribute(?string $value): void
+    {
+        $this->attributes['tariff_specific_rate_unit'] = $value !== null ? substr(trim((string) $value), 0, 10) : null;
     }
 
     // Added unified reference and evidence file compliance inspection methods
