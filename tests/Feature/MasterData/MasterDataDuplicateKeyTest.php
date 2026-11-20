@@ -19,11 +19,6 @@ use PDOException;
 use RuntimeException;
 use Tests\TestCase;
 
-/**
- * Duplicate UNIQUE key handling for master_customers, master_licenses,
- * master_statistics, master_units and master_branches.
- * Runs inside a transaction on the "mysql" connection (same pattern as existing feature tests).
- */
 class MasterDataDuplicateKeyTest extends TestCase
 {
     use DatabaseTransactions;

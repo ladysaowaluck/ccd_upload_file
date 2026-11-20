@@ -104,6 +104,12 @@
         }
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+    <!--  Type-to-search dropdowns (Tom Select 2.7.0, Apache-2.0, self-hosted so it works without a CDN).
+         Add data-searchable to any <select> to enable it. -->
+    <link rel="stylesheet" href="{{ asset('vendor/tom-select/tom-select.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/searchable-select.css') }}">
+    <script defer src="{{ asset('vendor/tom-select/tom-select.complete.min.js') }}"></script>
+    <script defer src="{{ asset('js/searchable-select.js') }}"></script>
 </head>
 
 <body class="h-full antialiased font-sans text-slate-800 bg-slate-100/60" x-data="{ sidebarOpen: false }">

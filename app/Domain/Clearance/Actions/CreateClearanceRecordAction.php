@@ -7,13 +7,16 @@ use App\Models\Business\MasterCustomer;
 use App\Models\Business\MasterLicense;
 use App\Models\Business\MasterStatistic;
 use App\Models\Business\MasterUnit;
+use App\Domain\Clearance\Services\TariffCodeResolver;
 use App\Services\Storage\DocumentStorageService;
 use Illuminate\Http\UploadedFile;
 
 class CreateClearanceRecordAction
 {
+    // TariffCodeResolver maps typed codes to master IDs (same as the Excel import).
     public function __construct(
-        protected DocumentStorageService $storageService
+        protected DocumentStorageService $storageService,
+        protected TariffCodeResolver $codeResolver
     ) {
     }
 
@@ -27,6 +30,11 @@ class CreateClearanceRecordAction
             if ($customer) {
                 $data['customer_name'] = $customer->company_name;
             }
+        }
+        // customer_clearance_data.customer_name is varchar(60); master company_name can be longer
+        // (DB error 1406 "Data too long"). Store the first 60 characters.
+        if (isset($data['customer_name'])) {
+            $data['customer_name'] = mb_substr(trim((string) $data['customer_name']), 0, 60);
         }
 
         $jobNo = $data['job_no'] ?? 'TEMP';
@@ -55,11 +63,18 @@ class CreateClearanceRecordAction
             }
         }
 
-        if (isset($data['quantity_unit_id'])) {
-            $data['quantity_unit_id'] = substr(trim((string) $data['quantity_unit_id']), 0, 3);
-        }
-        if (isset($data['statistic_code_id'])) {
-            $data['statistic_code_id'] = substr(trim((string) $data['statistic_code_id']), 0, 3);
+        // if (isset($data['quantity_unit_id'])) {
+        //     $data['quantity_unit_id'] = substr(trim((string) $data['quantity_unit_id']), 0, 3);
+        // }
+        // if (isset($data['statistic_code_id'])) {
+        //     $data['statistic_code_id'] = substr(trim((string) $data['statistic_code_id']), 0, 3);
+        // }
+        // Lady: These fields now come from master data selectors and hold IDs. Cutting them to 3 characters
+        // would turn ID 1234 into 123 (a different master row). Keep the full ID; empty -> null.
+        foreach (['quantity_unit_id', 'statistic_code_id'] as $idField) {
+            if (array_key_exists($idField, $data)) {
+                $data[$idField] = is_numeric($data[$idField]) ? (int) $data[$idField] : null;
+            }
         }
         if (isset($data['privilege_code'])) {
             $data['privilege_code'] = substr(trim((string) $data['privilege_code']), 0, 3);
@@ -103,14 +118,30 @@ class CreateClearanceRecordAction
         */
 
         // Safely map statistic_code and quantity_unit input values to their respective schema fields.
+        // if (!empty($data['statistic_code']) && empty($data['statistic_code_id'])) {
+        //     $data['statistic_code_id'] = substr(trim((string) $data['statistic_code']), 0, 3);
+        // }
+        // if (!empty($data['quantity_unit']) && empty($data['quantity_unit_id'])) {
+        //     $data['quantity_unit_id'] = substr(trim((string) $data['quantity_unit']), 0, 3);
+        // }
+        // The code ("001", "C62") was written into the integer ID columns ("001" -> 1 = wrong master row,
+        // "C62" -> DB error 1366). Resolve the code to the master ID, as the Excel import does.
         if (!empty($data['statistic_code']) && empty($data['statistic_code_id'])) {
-            $data['statistic_code_id'] = substr(trim((string) $data['statistic_code']), 0, 3);
+            $data['statistic_code_id'] = $this->codeResolver->statisticId($data['statistic_code']);
         }
         if (!empty($data['quantity_unit']) && empty($data['quantity_unit_id'])) {
-            $data['quantity_unit_id'] = substr(trim((string) $data['quantity_unit']), 0, 3);
+            $data['quantity_unit_id'] = $this->codeResolver->unitId($data['quantity_unit']);
         }
+        // The form posts a unit CODE (e.g. "KGM") in tariff_specific_rate_unit_id; the column is the
+        // master_units ID. Resolve it (unknown code -> null). A numeric value is already an ID.
+        if (!empty($data['tariff_specific_rate_unit_id']) && !is_numeric($data['tariff_specific_rate_unit_id'])) {
+            $data['tariff_specific_rate_unit_id'] = $this->codeResolver->unitId($data['tariff_specific_rate_unit_id']);
+        }
+        // if (!empty($data['tariff_specific_rate_unit']) && empty($data['tariff_specific_rate_unit_id'])) {
+        //     $data['tariff_specific_rate_unit_id'] = substr(trim((string) $data['tariff_specific_rate_unit']), 0, 10);
+        // }
         if (!empty($data['tariff_specific_rate_unit']) && empty($data['tariff_specific_rate_unit_id'])) {
-            $data['tariff_specific_rate_unit_id'] = substr(trim((string) $data['tariff_specific_rate_unit']), 0, 10);
+            $data['tariff_specific_rate_unit_id'] = $this->codeResolver->unitId($data['tariff_specific_rate_unit']);
         }
 
         foreach ([1, 2, 3, 4] as $idx) {
@@ -124,7 +155,9 @@ class CreateClearanceRecordAction
         }
 
         $data['product_description_th'] = $data['product_description_th'] ?? ($data['product_description_en'] ?? '');
-        $data['statistic_code_id'] = $data['statistic_code_id'] ?? '000';
+        // $data['statistic_code_id'] = $data['statistic_code_id'] ?? '000';
+        // Keep the "000" default, but store the ID of master statistic "000" (not the text "000").
+        $data['statistic_code_id'] = $data['statistic_code_id'] ?? $this->codeResolver->statisticId('000');
 
         $data['create_date'] = $data['create_date'] ?? date('Y-m-d');
         $data['update_date'] = date('Y-m-d');

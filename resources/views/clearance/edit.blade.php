@@ -95,7 +95,7 @@
                         <label class="w-52 shrink-0 text-xs font-semibold text-slate-700 pt-2">Customer Name <span
                                 class="text-rose-500">*</span></label>
                         <div class="flex-1">
-                            <select name="master_customer_id" required
+                            <select name="master_customer_id" data-searchable required
                                 class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
                                 <option value="">Select Customer...</option>
                                 @foreach($customers as $c)
@@ -112,7 +112,7 @@
                         <label class="w-52 shrink-0 text-xs font-semibold text-slate-700 pt-2">Branch <span
                                 class="text-rose-500">*</span></label>
                         <div class="flex-1">
-                            <select name="master_branch_id" required
+                            <select name="master_branch_id" data-searchable required
                                 class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
                                 <option value="">Select Branch...</option>
                                 @foreach($branches as $b)
@@ -298,18 +298,36 @@
                         <label class="w-52 shrink-0 text-xs font-semibold text-slate-700">Statistic Code (3 digits) <span
                                 class="text-rose-500">*</span></label>
                         <div class="flex-1">
-                            <input type="text" name="statistic_code"
-                                value="{{ old('statistic_code', $record->statistic_code) }}" maxlength="3" placeholder="000"
-                                class="w-full text-xs font-mono uppercase rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <!-- <input type="text" name="statistic_code" 
+                            value="{{ old('statistic_code', $record->statistic_code) }}" maxlength="3" placeholder="000" 
+                            class="w-full text-xs font-mono uppercase rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none"> 
+                            : Master data selector — posts master_statistics.id (shown as the code, e.g. 001).  -->
+                            <select name="statistic_code_id" data-searchable
+                                class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="">Select Statistic Code...</option>
+                                @foreach($statistics as $st)
+                                    <option value="{{ $st->id }}" {{ (string) old('statistic_code_id', $record->statistic_code_id) === (string) $st->id ? 'selected' : '' }}>{{ $st->statistics }}</option>
+                                @endforeach
+                            </select>
+                            @error('statistic_code_id') <p class="text-xs text-rose-600 mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
                     <div class="flex items-center gap-4">
                         <label class="w-52 shrink-0 text-xs font-semibold text-slate-700">Quantity Unit (3 digits)</label>
                         <div class="flex-1">
-                            <input type="text" name="quantity_unit"
-                                value="{{ old('quantity_unit', $record->quantity_unit) }}" maxlength="3" placeholder="C62"
-                                class="w-full text-xs font-mono uppercase rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <!-- <input type="text" name="quantity_unit" 
+                            value="{{ old('quantity_unit', $record->quantity_unit) }}" maxlength="3" placeholder="C62" 
+                            class="w-full text-xs font-mono uppercase rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none"> 
+                            Master data selector — posts master_units.id (shown as the unit code, e.g. C62).  -->
+                            <select name="quantity_unit_id" data-searchable
+                                class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="">Select Quantity Unit...</option>
+                                @foreach($units as $u)
+                                    <option value="{{ $u->id }}" {{ (string) old('quantity_unit_id', $record->quantity_unit_id) === (string) $u->id ? 'selected' : '' }}>{{ $u->unit }}</option>
+                                @endforeach
+                            </select>
+                            @error('quantity_unit_id') <p class="text-xs text-rose-600 mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
@@ -335,10 +353,21 @@
                         <label class="w-52 shrink-0 text-xs font-semibold text-slate-700">Tariff Rate (Specific)
                             Unit</label>
                         <div class="flex-1">
-                            <input type="text" name="tariff_specific_rate_unit_id"
-                                value="{{ old('tariff_specific_rate_unit_id', $record->tariff_specific_rate_unit_id) }}"
-                                placeholder="e.g. KGM"
-                                class="w-full text-xs font-mono rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <!-- <input type="text" name="tariff_specific_rate_unit_id" 
+                            value="{{ old('tariff_specific_rate_unit_id', $record->tariff_specific_rate_unit_id) }}" 
+                             Pre-fill the unit code (e.g. KGM); it is resolved back to the ID on save. 
+                            value="{{ old('tariff_specific_rate_unit_id', $record->tariff_specific_rate_unit) }}" 
+                            placeholder="e.g. KGM" 
+                            class="w-full text-xs font-mono rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none"> 
+                             Master data selector — posts master_units.id (shown as the unit code, e.g. KGM).  -->
+                            <select name="tariff_specific_rate_unit_id" data-searchable
+                                class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="">Select Unit...</option>
+                                @foreach($units as $u)
+                                    <option value="{{ $u->id }}" {{ (string) old('tariff_specific_rate_unit_id', $record->tariff_specific_rate_unit_id) === (string) $u->id ? 'selected' : '' }}>{{ $u->unit }}</option>
+                                @endforeach
+                            </select>
+                            @error('tariff_specific_rate_unit_id') <p class="text-xs text-rose-600 mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
@@ -393,10 +422,12 @@
                         <label class="w-52 shrink-0 text-xs font-semibold text-slate-700">Tariff Rate (Specific)
                             Unit</label>
                         <div class="flex-1">
-                            <input type="text" name="excise_tax_rate_unit_id"
-                                value="{{ old('excise_tax_rate_unit_id', $record->excise_tax_rate_unit_id) }}"
-                                placeholder="e.g. LTR"
-                                class="w-full text-xs font-mono rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <!-- <input type="text" name="excise_tax_rate_unit_id" 
+                            value="{{ old('excise_tax_rate_unit_id', $record->excise_tax_rate_unit_id) }}" 
+                            placeholder="e.g. LTR" 
+                            class="w-full text-xs font-mono rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none"> 
+                            : Master data selector (master_units); legacy text codes are pre-selected too.  -->
+                            <x-unit-select name="excise_tax_rate_unit_id" :units="$units" :selected="old('excise_tax_rate_unit_id', $record->excise_tax_rate_unit_id)" />
                         </div>
                     </div>
 
@@ -444,10 +475,12 @@
                             <label class="w-52 shrink-0 text-xs font-semibold text-slate-700">Tariff Rate (Specific)
                                 Unit</label>
                             <div class="flex-1">
-                                <input type="text" name="other_tax{{ $tn }}_rate_unit_id"
-                                    value="{{ old('other_tax' . $tn . '_rate_unit_id', $record->{'other_tax' . $tn . '_rate_unit_id'}) }}"
-                                    placeholder="e.g. KGM"
-                                    class="w-full text-xs font-mono rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <!-- <input type="text" name="other_tax{{ $tn }}_rate_unit_id" 
+                                value="{{ old('other_tax' . $tn . '_rate_unit_id', $record->{'other_tax' . $tn . '_rate_unit_id'}) }}" 
+                                placeholder="e.g. KGM" 
+                                class="w-full text-xs font-mono rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none"> 
+                                Master data selector (master_units); legacy text codes are pre-selected too.  -->
+                                <x-unit-select :name="'other_tax' . $tn . '_rate_unit_id'" :units="$units" :selected="old('other_tax' . $tn . '_rate_unit_id', $record->{'other_tax' . $tn . '_rate_unit_id'})" />
                             </div>
                         </div>
 
@@ -475,7 +508,7 @@
                         <div class="flex items-center gap-4">
                             <label class="w-52 shrink-0 text-xs font-semibold text-slate-700">Name of License {{ $ln }}</label>
                             <div class="flex-1">
-                                <select name="license{{ $ln }}_name_id"
+                                <select name="license{{ $ln }}_name_id" data-searchable
                                     class="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
                                     <option value="">— None —</option>
                                     @foreach($licenses as $lic)

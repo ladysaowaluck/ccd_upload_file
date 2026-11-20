@@ -27,25 +27,17 @@ class CustomerClearanceData extends Model
         'model_name',
         'materials',
         'usages',
-        // 'usage', // compatibility alias
         'functions',
-        // 'function', // compatibility alias
         'position',
         'country_of_origin',
         'note',
         'hs_code',
         'sequence_code',
         'statistic_code_id',
-        // 'statistic_code', // compatibility alias
         'quantity_unit_id',
-        // 'quantity_unit', // compatibility alias
         'privilege_code',
         'tariff_ad_valorem',
-        // Lady : Database table customer_clearance_data column is 'tariff_specific_rate_unit' (varchar 10), not 'tariff_specific_rate_unit_id'.
-        // Keeping 'tariff_specific_rate_unit_id' in $fillable caused SQLSTATE[42S22] unknown column errors during record updates.
         'tariff_specific_rate_unit_id',
-        // Map correct schema column tariff_specific_rate_unit to $fillable.
-        // 'tariff_specific_rate_unit',
         'tariff_specific_rate_baht',
         'anti_dumping_ad_valorem',
         'excise_tax_ad_valorem',
@@ -194,23 +186,65 @@ class CustomerClearanceData extends Model
 
     public function getStatisticCodeAttribute(): ?string
     {
-        return $this->attributes['statistic_code_id'] ?? $this->statistic?->statistics ?? null;
+        // return $this->attributes['statistic_code_id'] ?? $this->statistic?->statistics ?? null;
+        // Lady: statistic_code_id holds the master_statistics ID, so returning it first showed e.g. "93"
+        // instead of "001". Show the master code; fall back to the raw value for unmatched legacy rows.
+        $raw = $this->attributes['statistic_code_id'] ?? null;
+
+        return $this->statistic?->statistics ?? ($raw !== null ? (string) $raw : null);
     }
 
     public function getQuantityUnitAttribute(): ?string
     {
-        return $this->attributes['quantity_unit'] ?? $this->quantityUnit?->unit ?? null;
+        // return $this->attributes['quantity_unit'] ?? $this->quantityUnit?->unit ?? null;
+        // Lady: "$this->quantityUnit" resolves to THIS accessor (quantity_unit), not the relation, so it was
+        // always null. Read the relation explicitly; fall back to the raw value for unmatched legacy rows.
+        $raw = $this->attributes['quantity_unit_id'] ?? null;
+
+        return $this->attributes['quantity_unit']
+            ?? $this->getRelationValue('quantityUnit')?->unit
+            ?? ($raw !== null ? (string) $raw : null);
     }
 
     // Provide backward-compatibility accessor/mutator for tariff_specific_rate_unit_id pointing to actual column tariff_specific_rate_unit
-    public function getTariffSpecificRateUnitIdAttribute(): ?string
+    // public function getTariffSpecificRateUnitIdAttribute(): ?string
+    // {
+    //     return $this->attributes['tariff_specific_rate_unit'] ?? null;
+    // }
+    //
+    // public function setTariffSpecificRateUnitIdAttribute(?string $value): void
+    // {
+    //     $this->attributes['tariff_specific_rate_unit'] = $value !== null ? substr(trim((string) $value), 0, 10) : null;
+    // }
+    // Lady: The real table has tariff_specific_rate_unit_id (int, master_units.id) and NO column
+    // tariff_specific_rate_unit. The mutator above redirected every save to that missing column
+    // (SQLSTATE 42S22 / 1054 "Unknown column"), so every create failed.
+
+    // Display helper — unit code (e.g. "KGM") of tariff_specific_rate_unit_id; raw value if not matched.
+    public function getTariffSpecificRateUnitAttribute(): ?string
     {
-        return $this->attributes['tariff_specific_rate_unit'] ?? null;
+        $raw = $this->attributes['tariff_specific_rate_unit_id'] ?? null;
+
+        return $this->getRelationValue('tariffSpecificRateUnit')?->unit ?? ($raw !== null ? (string) $raw : null);
     }
 
-    public function setTariffSpecificRateUnitIdAttribute(?string $value): void
+    // Unit code for the *_rate_unit_id columns (excise / other tax) that store master_units.id from the
+    // master data selector. Legacy rows that hold a typed code (e.g. "LTR") are shown as stored.
+    public function unitCodeFor(string $column): ?string
     {
-        $this->attributes['tariff_specific_rate_unit'] = $value !== null ? substr(trim((string) $value), 0, 10) : null;
+        $value = $this->attributes[$column] ?? null;
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            $unit = MasterUnit::find((int) $value);
+            if ($unit) {
+                return $unit->unit;
+            }
+        }
+
+        return (string) $value;
     }
 
     // Added unified reference and evidence file compliance inspection methods

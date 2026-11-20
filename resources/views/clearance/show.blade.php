@@ -304,6 +304,7 @@
                         <div class="w-52 shrink-0 text-xs font-semibold text-slate-700">Tariff Rate (Specific) Unit</div>
                         <div
                             class="flex-1 text-xs font-mono text-slate-800 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                             <!-- {{ $record->tariff_specific_rate_unit_id ?: '—' }}  -->
                             {{ $record->tariff_specific_rate_unit ?: '—' }}</div>
                     </div>
 
@@ -347,7 +348,9 @@
                         <div class="w-52 shrink-0 text-xs font-semibold text-slate-700">Tariff Rate (Specific) Unit</div>
                         <div
                             class="flex-1 text-xs font-mono text-slate-800 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                            {{ $record->excise_tax_rate_unit_id ?: '—' }}</div>
+                            <!--  {{ $record->excise_tax_rate_unit_id ?: '—' }} 
+                             : Show the unit code from master_units (e.g. LTR) instead of the ID.  -->
+                            {{ $record->unitCodeFor('excise_tax_rate_unit_id') ?: '—' }}</div>
                     </div>
 
                     <div class="flex items-center gap-4">
@@ -383,7 +386,9 @@
                             <div class="w-52 shrink-0 text-xs font-semibold text-slate-700">Tariff Rate (Specific) Unit</div>
                             <div
                                 class="flex-1 text-xs font-mono text-slate-800 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                                {{ $record->{'other_tax' . $tn . '_rate_unit_id'} ?: '—' }}</div>
+                                <!--  {{ $record->{'other_tax' . $tn . '_rate_unit_id'} ?: '—' }} 
+                                 : Show the unit code from master_units instead of the ID.  -->
+                                {{ $record->unitCodeFor('other_tax' . $tn . '_rate_unit_id') ?: '—' }}</div>
                         </div>
 
                         <div class="flex items-center gap-4">

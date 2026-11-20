@@ -102,11 +102,20 @@ class ClearanceCreateController extends Controller
             }
 
             return $redirect;
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // Another user saved the same Job No. between page load and submit.
+            return back()->withInput()->withErrors([
+                'job_no' => 'This Job No. has just been used by another record. Please enter a different Job No.',
+            ]);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error("ClearanceCreateController: Record creation failed: " . $e->getMessage(), [
                 'exception' => $e,
             ]);
-            return back()->withInput()->with('error', 'Failed to create clearance record: ' . $e->getMessage());
+            // return back()->withInput()->with('error', 'Failed to create clearance record: ' . $e->getMessage());
+            
+            return back()->withInput()->withErrors([
+                'create' => 'Failed to create the clearance record. Please check the data and try again, or contact the administrator.',
+            ]);
         }
     }
 }

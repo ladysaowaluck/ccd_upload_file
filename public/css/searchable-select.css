@@ -1,0 +1,54 @@
+/* Make Tom Select boxes look like the existing Tailwind selects (text-xs, slate-300 border, rounded-lg, brand focus ring). */
+.ts-wrapper.single .ts-control,
+.ts-wrapper .ts-control {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    min-height: 34px;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    background-color: #fff;
+    box-shadow: none;
+    color: #1e293b;
+}
+.ts-wrapper.focus .ts-control {
+    border-color: #0f87d4;
+    box-shadow: 0 0 0 2px #0f87d4;
+}
+.ts-wrapper .ts-control input {
+    font-size: 0.75rem;
+    color: #1e293b;
+}
+.ts-dropdown {
+    font-size: 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    margin-top: 4px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    z-index: 60;
+}
+.ts-dropdown .option {
+    padding: 0.4rem 0.75rem;
+}
+.ts-dropdown .active {
+    background-color: #edf6fd;
+    color: #005a9c;
+}
+.ts-dropdown .no-results {
+    padding: 0.4rem 0.75rem;
+    color: #64748b;
+}
+/* The Tom Select wrapper copies the select's classes; drop the duplicated border/padding on the wrapper itself. */
+.ts-wrapper.w-full {
+    border: 0;
+    padding: 0;
+    box-shadow: none;
+    background: transparent;
+}
+.ts-wrapper.plugin-clear_button .clear-button {
+    color: #94a3b8;
+    right: 1.75rem;
+}
+.ts-wrapper.plugin-clear_button .clear-button:hover {
+    color: #b90019;
+}

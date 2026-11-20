@@ -584,7 +584,10 @@ missing-field presentation --}}
 
                                 <!-- 9. Qty Unit -->
                                 <td class="px-2 py-2 text-center font-mono text-slate-700 whitespace-nowrap">
-                                    {{ $item->quantityUnit->unit ?? ($item->quantity_unit_id ?: '-') }}
+                                     <!-- $item->quantityUnit->unit ?? ($item->quantity_unit_id ?: '-') 
+                                    {"$item->quantityUnit" hits the quantity_unit accessor (a string), so the unit code never showed.
+                                         The accessor returns the master_units code (e.g. C62) via the relation.  -->
+                                    {{ $item->quantity_unit ?: '-' }}
                                 </td>
 
                                 <!-- 10. Product code 1 -->

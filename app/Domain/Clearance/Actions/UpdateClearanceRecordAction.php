@@ -29,6 +29,10 @@ class UpdateClearanceRecordAction
                 $data['customer_name'] = $customer->company_name;
             }
         }
+        // customer_clearance_data.customer_name is varchar(60); keep the first 60 characters.
+        if (isset($data['customer_name'])) {
+            $data['customer_name'] = mb_substr(trim((string) $data['customer_name']), 0, 60);
+        }
 
         // Sanitize job_no to prevent filesystem or S3 key issues with special characters
         $cleanJobNo = preg_replace('/[^A-Za-z0-9_\-]/', '_', (string) $record->job_no);
@@ -105,11 +109,18 @@ class UpdateClearanceRecordAction
             }
         }
 
-        if (isset($data['quantity_unit_id'])) {
-            $data['quantity_unit_id'] = substr(trim((string) $data['quantity_unit_id']), 0, 3);
-        }
-        if (isset($data['statistic_code_id'])) {
-            $data['statistic_code_id'] = substr(trim((string) $data['statistic_code_id']), 0, 3);
+        // if (isset($data['quantity_unit_id'])) {
+        //     $data['quantity_unit_id'] = substr(trim((string) $data['quantity_unit_id']), 0, 3);
+        // }
+        // if (isset($data['statistic_code_id'])) {
+        //     $data['statistic_code_id'] = substr(trim((string) $data['statistic_code_id']), 0, 3);
+        // }
+        // Lady: These fields now come from master data selectors and hold IDs. Cutting them to 3 characters
+        // would turn ID 1234 into 123 (a different master row). Keep the full ID; empty -> null.
+        foreach (['quantity_unit_id', 'statistic_code_id'] as $idField) {
+            if (array_key_exists($idField, $data)) {
+                $data[$idField] = is_numeric($data[$idField]) ? (int) $data[$idField] : null;
+            }
         }
         if (isset($data['privilege_code'])) {
             $data['privilege_code'] = substr(trim((string) $data['privilege_code']), 0, 3);
@@ -152,15 +163,42 @@ class UpdateClearanceRecordAction
         */
 
         // Safely map statistic_code and quantity_unit input values to their respective schema fields.
+        // if (!empty($data['statistic_code']) && empty($data['statistic_code_id'])) {
+        //     $data['statistic_code_id'] = substr(trim((string) $data['statistic_code']), 0, 3);
+        // }
+        // if (!empty($data['quantity_unit']) && empty($data['quantity_unit_id'])) {
+        //     $data['quantity_unit_id'] = substr(trim((string) $data['quantity_unit']), 0, 3);
+        // }
+        // Resolve the typed code to the master ID (same as create and the Excel import).
+        // If the code is not found (legacy value), the stored ID is left unchanged instead of being overwritten.
         if (!empty($data['statistic_code']) && empty($data['statistic_code_id'])) {
-            $data['statistic_code_id'] = substr(trim((string) $data['statistic_code']), 0, 3);
+            $statisticId = app(\App\Domain\Clearance\Services\TariffCodeResolver::class)->statisticId($data['statistic_code']);
+            if ($statisticId !== null) {
+                $data['statistic_code_id'] = $statisticId;
+            }
         }
         if (!empty($data['quantity_unit']) && empty($data['quantity_unit_id'])) {
-            $data['quantity_unit_id'] = substr(trim((string) $data['quantity_unit']), 0, 3);
+            $unitId = app(\App\Domain\Clearance\Services\TariffCodeResolver::class)->unitId($data['quantity_unit']);
+            if ($unitId !== null) {
+                $data['quantity_unit_id'] = $unitId;
+            }
         }
-        if (!empty($data['tariff_specific_rate_unit']) && empty($data['tariff_specific_rate_unit_id'])) {
-            $data['tariff_specific_rate_unit_id'] = substr(trim((string) $data['tariff_specific_rate_unit']), 0, 10);
+        // if (!empty($data['tariff_specific_rate_unit']) && empty($data['tariff_specific_rate_unit_id'])) {
+        //     $data['tariff_specific_rate_unit_id'] = substr(trim((string) $data['tariff_specific_rate_unit']), 0, 10);
+        // }
+        // Unknown code -> keep the stored value. Empty input -> null (field is optional).
+        if (empty($data['tariff_specific_rate_unit_id']) && !empty($data['tariff_specific_rate_unit'])) {
+            $data['tariff_specific_rate_unit_id'] = $data['tariff_specific_rate_unit'];
         }
+        if (!empty($data['tariff_specific_rate_unit_id']) && !is_numeric($data['tariff_specific_rate_unit_id'])) {
+            $unitId = app(\App\Domain\Clearance\Services\TariffCodeResolver::class)->unitId($data['tariff_specific_rate_unit_id']);
+            if ($unitId !== null) {
+                $data['tariff_specific_rate_unit_id'] = $unitId;
+            } else {
+                unset($data['tariff_specific_rate_unit_id']);
+            }
+        }
+        unset($data['tariff_specific_rate_unit']);
 
         foreach ([1, 2, 3, 4] as $idx) {
             $fkKey = "license{$idx}_name_id";
